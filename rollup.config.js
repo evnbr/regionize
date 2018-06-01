@@ -1,6 +1,7 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import minify from 'rollup-plugin-babel-minify';
+import babel from 'rollup-plugin-babel';
 
 import pkg from './package.json';
 
@@ -46,12 +47,28 @@ export default [
     ],
   }),
 
-  // CommonJS (for Node) and ES module (for bundlers) build.
+  // CommonJS (for Node)
   extend(baseConfig, {
-    output: [
-      extend(baseOutput, { file: pkg.main, format: 'cjs' }),
-      extend(baseOutput, { file: pkg.module, format: 'es' }),
+    output: extend(baseOutput, {
+      file: pkg.main,
+      format: 'cjs',
+    }),
+    plugins: [
+      resolve(),
+      commonjs(),
+      babel({
+        runtimeHelpers: true,
+        exclude: 'node_modules/**',
+      }),
     ],
+  }),
+
+  // ES module (for bundlers)
+  extend(baseConfig, {
+    output: extend(baseOutput, {
+      file: pkg.module,
+      format: 'es',
+    }),
     plugins: [
       resolve(),
     ],
