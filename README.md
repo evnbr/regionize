@@ -14,6 +14,29 @@ Powers [bindery.js](https://evanbrooks.info/bindery/).
 
 ## Usage
 
+### Create a region
+
+```js
+new Region(
+  element // HTML Element
+);
+```
+
+### Start a flow
+
+```js
+await flowIntoRegions(
+  content,    // HTML Element
+  makeRegion, // Function that returns a new Region
+  applySplit, // Function to apply extra styling after splitting
+  canSplit,   // Function to determine if its okay to split element
+  beforeAdd,  // Function called before element is added
+  afterAdd    // Function called after element is added
+);
+```
+
+
+## Example
 ```js
 import { Region, flowIntoRegions } from 'regionize';
 
@@ -26,22 +49,21 @@ const makeRegion = () => {
 }
 
 const applySplit = (el, clone) => {
-  clone.style.textIndent = '0'; // You may want to add custom styling here
+  // For example, the second part of a paragraph
+  // that was split between pages shouldn't be indented
+  clone.style.textIndent = '0';
 }
-const canSplit = el => !el.matches('figure'),
+const canSplit = el => {
+  // Keep figures from breaking across pages
+  return !el.matches('figure');
+}
+
 const beforeAdd = () => {};
 const afterAdd = () => {};
 
 const render = async (content) => {
   const content = document.querySelector('#content');
-  await flowIntoRegions(
-    content,    // HTML Element
-    makeRegion, // Function that returns a new Region
-    applySplit, // Function to apply extra styling after splitting
-    canSplit,   // Function to determine if its okay to split element
-    beforeAdd,  // Function called before element is added
-    afterAdd    // Function called after element is added
-  );
+  await flowIntoRegions(content, makeRegion, applySplit, canSplit, beforeAdd, afterAdd);
   alert(`${document.body.childNodes.length} regions added!`);
 }
 render();
