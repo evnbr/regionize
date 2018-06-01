@@ -14,10 +14,18 @@ Powers [bindery.js](https://evanbrooks.info/bindery/).
 
 ## Usage
 
+```
+npm install --save bindery
+```
+
 ### Create a region
 
 ```js
-new Region(
+import { Region } from 'bindery';
+
+... 
+
+const box = new Region(
   element // HTML Element
 );
 ```
@@ -25,6 +33,10 @@ new Region(
 ### Start a flow
 
 ```js
+import { flowIntoRegions } from 'bindery';
+
+... 
+
 await flowIntoRegions(
   content,    // HTML Element
   makeRegion, // Function that returns a new Region
@@ -48,22 +60,30 @@ const makeRegion = () => {
   return new Region(el); // Instantiate a region with an HTML Element
 }
 
+// The second part of a paragraph that flows
+// between pages shouldn't be indented
 const applySplit = (el, clone) => {
-  // For example, the second part of a paragraph
-  // that was split between pages shouldn't be indented
   clone.style.textIndent = '0';
 }
+
+// Keep figures from breaking across pages
 const canSplit = el => {
-  // Keep figures from breaking across pages
   return !el.matches('figure');
 }
 
 const beforeAdd = () => {};
 const afterAdd = () => {};
 
-const render = async (content) => {
+const render = async () => {
   const content = document.querySelector('#content');
-  await flowIntoRegions(content, makeRegion, applySplit, canSplit, beforeAdd, afterAdd);
+  await flowIntoRegions(
+    content,
+    makeRegion,
+    applySplit,
+    canSplit,
+    beforeAdd,
+    afterAdd
+  );
   alert(`${document.body.childNodes.length} regions added!`);
 }
 render();
