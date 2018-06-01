@@ -4,6 +4,8 @@ import tryInNextRegion from './tryInNextRegion';
 import ignoreOverflow from './ignoreOverflow';
 import clonePath from './clonePath';
 import ensureImageLoaded from './ensureImageLoaded';
+import orderedListRule from './orderedListRule';
+import tableRowRule from './tableRowRule';
 
 // flow content through FlowBoxes.
 // This function is not book-specific,
@@ -22,16 +24,22 @@ const flowIntoRegions = async (
   const canSplitCurrent = () => canSplit(currentRegion.currentElement);
   const ignoreCurrentOverflow = () => ignoreOverflow(currentRegion.currentElement);
 
+  const splitRules = (prev, clone, next, deepClone) => {
+    if (prev.tagName === 'OL') orderedListRule(prev, clone, next, deepClone);
+    if (prev.tagName === 'TR') tableRowRule(prev, clone, next, deepClone);
+    applySplit(prev, clone, next, deepClone);
+  };
+
   const continueInNextRegion = () => {
     const oldBox = currentRegion;
     currentRegion = createRegion();
 
-    const newPath = clonePath(oldBox.path, applySplit);
+    const newPath = clonePath(oldBox.path, splitRules);
     currentRegion.setPath(newPath);
     return currentRegion;
   };
 
-  const continuedElement = () => {
+  const continuedParent = () => {
     continueInNextRegion();
     return currentRegion.currentElement;
   };
@@ -46,11 +54,11 @@ const flowIntoRegions = async (
 
   const addSplittableTextNode = async (textNode) => {
     const el = currentRegion.currentElement;
-    let hasAdded = await addTextNodeAcrossParents(textNode, el, continuedElement, hasOverflowed);
+    let hasAdded = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
     if (!hasAdded && currentRegion.path.length > 1) {
       // retry 1
       tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-      hasAdded = await addTextNodeAcrossParents(textNode, el, continuedElement, hasOverflowed);
+      hasAdded = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
     }
     if (!hasAdded) {
       // retry 2
