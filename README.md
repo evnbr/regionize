@@ -11,3 +11,38 @@ overflows— the library assumes provided elements are empty, already in the doc
 have an intrinsic height.
 
 Powers [bindery.js](https://evanbrooks.info/bindery/).
+
+## Usage
+
+```js
+import { Region, flowIntoRegions } from 'regionize';
+
+const makeRegion = () => {
+  const div = document.createElement('div');
+  div.style.height = '200px'; // Region must have size
+  div.style.width = '200px';
+  document.body.appendChild(div); // Region must be in DOM
+  return new Region(el); // Instantiate a region with an HTML Element
+}
+
+const applySplit = (el, clone) => {
+  clone.style.textIndent = '0'; // You may want to add custom styling here
+}
+const canSplit = el => !el.matches('figure'),
+const beforeAdd = () => {};
+const afterAdd = () => {};
+
+const render = async (content) => {
+  const content = document.querySelector('#content');
+  await flowIntoRegions(
+    content,    // HTML Element
+    makeRegion, // Function that returns a new Region
+    applySplit, // Function to apply extra styling after splitting
+    canSplit,   // Function to determine if its okay to split element
+    beforeAdd,  // Function called before element is added
+    afterAdd    // Function called after element is added
+  );
+  alert(`${document.body.childNodes.length} regions added!`);
+}
+render();
+```
