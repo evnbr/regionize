@@ -7,18 +7,27 @@ import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
 import tableRowRule from './tableRowRule';
 
+const noop = () => {};
+
 // flow content through FlowBoxes.
 // This function is not book-specific,
 // the caller is responsible for managing
 // and creating boxes.
-const flowIntoRegions = async (
-  content,
-  createRegion,
-  applySplit,
-  canSplit,
-  beforeAdd,
-  afterAdd
-) => {
+const flowIntoRegions = async (opts) => {
+  // required options
+  const content = opts.content;
+  const createRegion = opts.createRegion;
+  if (!content) throw Error('content not specified');
+  if (!createRegion) throw Error('createRegion not specified');
+
+  // optional
+  const applySplit = opts.applySplit || noop;
+  const canSplit = opts.canSplit || (() => true);
+  const beforeAdd = opts.beforeAdd || noop;
+  const afterAdd = opts.afterAdd || noop;
+
+  // ____
+  // Begin
   let currentRegion = createRegion();
   const hasOverflowed = () => currentRegion.hasOverflowed();
   const canSplitCurrent = () => canSplit(currentRegion.currentElement);

@@ -6,7 +6,6 @@ global.performance = { now: () => {
   return time;
 } };
 
-const noop = () => {};
 const mockDoc = document;
 const mockEl = (name = 'div') => mockDoc.createElement(name);
 let mockOverflow = el => el.textContent.length > 10;
@@ -50,7 +49,6 @@ test('Preserves content order (10char overflow)', async () => {
   a.appendChild(b);
   b.appendChild(c);
 
-  const canSplit = () => true;
   const regions = [];
   const createRegion = () => {
     const r = MockRegion(mockEl('div'));
@@ -59,7 +57,7 @@ test('Preserves content order (10char overflow)', async () => {
   };
 
   mockOverflow = el => el.textContent.length > 10;
-  await flowIntoRegions(a, createRegion, noop, canSplit, noop, noop);
+  await flowIntoRegions({ content: a, createRegion });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -69,7 +67,6 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   const content = mockEl();
   content.textContent = 'A content. B content. C content.';
 
-  const canSplit = () => true;
   const regions = [];
   const createRegion = () => {
     const r = MockRegion(mockEl('div'));
@@ -78,7 +75,7 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   };
 
   mockOverflow = el => el.textContent.length > 10;
-  await flowIntoRegions(content, createRegion, noop, canSplit, noop, noop);
+  await flowIntoRegions({ content, createRegion });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -97,7 +94,6 @@ test('Split elements over many pages (100char overflow)', async () => {
     content.appendChild(e);
   }
 
-  const canSplit = () => true;
   const regions = [];
   const createRegion = () => {
     const r = MockRegion(mockEl('div'));
@@ -106,7 +102,7 @@ test('Split elements over many pages (100char overflow)', async () => {
   };
 
   mockOverflow = el => el.textContent.length > 100;
-  await flowIntoRegions(content, createRegion, noop, canSplit, noop, noop);
+  await flowIntoRegions({ content, createRegion });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
@@ -125,7 +121,6 @@ test('Split elements over many pages (5children overflow)', async () => {
     content.appendChild(e);
   }
 
-  const canSplit = () => true;
   const regions = [];
   const createRegion = () => {
     const r = MockRegion(mockEl('div'));
@@ -137,7 +132,7 @@ test('Split elements over many pages (5children overflow)', async () => {
     const count = (el.querySelectorAll('*') || []).length;
     return count > 5;
   };
-  await flowIntoRegions(content, createRegion, noop, canSplit, noop, noop);
+  await flowIntoRegions({ content, createRegion });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
@@ -164,7 +159,7 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
 
 
   mockOverflow = el => el.textContent.length > 100;
-  await flowIntoRegions(content, createRegion, noop, canSplit, noop, noop);
+  await flowIntoRegions({ content, createRegion, canSplit });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
