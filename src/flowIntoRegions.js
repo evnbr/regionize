@@ -25,6 +25,7 @@ const flowIntoRegions = async (opts) => {
   const canSplit = opts.canSplit || (() => true);
   const beforeAdd = opts.beforeAdd || noop;
   const afterAdd = opts.afterAdd || noop;
+  const shouldTraverse = opts.shouldTraverse || (() => false);
 
   // ____
   // Begin
@@ -88,6 +89,14 @@ const flowIntoRegions = async (opts) => {
     }
   };
 
+  // No need to traverse every node if fifts AND
+  // none of the contents could change size.
+  // Images and custom rules could cause the size to change
+  const canSkipTraversal = (element) => {
+    const containsImage = element.querySelector('img');
+    return !containsImage && !shouldTraverse(element);
+  };
+
   let safeAddElementNode;
 
   // Adds an element node by clearing its childNodes, then inserting them
@@ -96,6 +105,14 @@ const flowIntoRegions = async (opts) => {
     // Insert element
     currentRegion.currentElement.appendChild(element);
     currentRegion.path.push(element);
+
+    if (canSkipTraversal(element)) {
+      // console.log('maybe short circuit');
+      if (!hasOverflowed()) {
+        // console.log('did short circuit');
+        return currentRegion.path.pop();
+      }
+    }
 
     // Clear element
     const childNodes = [...element.childNodes];
