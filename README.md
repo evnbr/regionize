@@ -15,15 +15,15 @@ Powers [bindery.js](https://evanbrooks.info/bindery/).
 ## Usage
 
 ```
-npm install --save bindery
+npm install --save regionize
 ```
 
 ### Create a region
 
 ```js
-import { Region } from 'bindery';
+import { Region } from 'regionize';
 
-... 
+...
 
 const box = new Region(
   element // HTML Element
@@ -33,26 +33,64 @@ const box = new Region(
 ### Start a flow
 
 ```js
-import { flowIntoRegions } from 'bindery';
+import { flowIntoRegions } from 'regionize';
 
-... 
+...
 
-await flowIntoRegions(
-  content,    // HTML Element
-  makeRegion, // Function that returns a new Region
-  applySplit, // Function to apply extra styling after splitting
-  canSplit,   // Function to determine if its okay to split element
-  beforeAdd,  // Function called before element is added
-  afterAdd    // Function called after element is added
-);
+await flowIntoRegions({
+  // required
+  content,       // HTML Element
+  createRegion,  // () => Region;
+
+  // optional
+  canSplit,
+  applySplit,
+  shouldTraverse,
+  beforeAdd,
+  afterAdd,
+});
 ```
+
+### Flow options
+
+#### content `HTMLElement`;
+
+#### createRegion `() => Region`;
+Called every time the previous region overflows. This method must always
+return a new Region created from an element. The region
+must have an intrinsic size when empty, and must already
+be added to the DOM.
+
+#### canSplit `(elmt: HTMLElement) => Bool`;
+By default, canSplit returns true, so a single element may be split between page.
+Return false if the element should not be split between two pages,
+for example if it is an image or figure. This
+means the element will be shifted to the next page instead.
+
+#### applySplit `(elmt: HTMLElement, clone: HTMLElement) => null`;
+Elements are cloned when they split between pages. Use this method
+to apply extra styling after splitting. For example, only the true
+start of a paragraph should be indented.
+
+#### shouldTraverse `(elmt: HTMLElement) => Bool`;
+By default, shouldTraverse returns false, so nodes are added in chunks when
+possible. Return true if the content region could change size as a result of
+traversal. For example, bindery.js will true if the region contains a footnote.
+
+#### beforeAdd `(elmt: HTMLElement, nextPage: Function) => null`;
+Called before an element is added to a region. For example,
+bindery.js uses this opportunity to call nextPage() if this element
+should start on a new page.
+
+#### afterAdd `(elmt: HTMLElement, nextPage: Function) => null`;
+Called after element is added to a region.
 
 
 ## Example
 ```js
 import { Region, flowIntoRegions } from 'regionize';
 
-const makeRegion = () => {
+const createRegion = () => {
   const div = document.createElement('div');
   div.style.height = '200px'; // Region must have size
   div.style.width = '200px';
@@ -62,29 +100,14 @@ const makeRegion = () => {
 
 // The second part of a paragraph that flows
 // between pages shouldn't be indented
-const applySplit = (el, clone) => {
-  clone.style.textIndent = '0';
-}
+const applySplit = (el, clone) => clone.style.textIndent = '0';
 
 // Keep figures from breaking across pages
-const canSplit = el => {
-  return !el.matches('figure');
-}
-
-const beforeAdd = () => {};
-const afterAdd = () => {};
+const canSplit = el => !el.matches('figure');
 
 const render = async () => {
   const content = document.querySelector('#content');
-  await flowIntoRegions(
-    content,
-    makeRegion,
-    applySplit,
-    canSplit,
-    beforeAdd,
-    afterAdd
-  );
-  alert(`${document.body.childNodes.length} regions added!`);
+  await flowIntoRegions({ content, createRegion, canSplit, applySplit });
 }
 render();
 ```
