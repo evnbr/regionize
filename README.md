@@ -53,36 +53,49 @@ await flowIntoRegions({
 
 ### Flow options
 
-#### content `HTMLElement`;
+#### content
+`HTMLElement`
 
-#### createRegion `() => Region`;
+#### createRegion
+`() => Region`
+
 Called every time the previous region overflows. This method must always
 return a new Region created from an element. The region
 must have an intrinsic size when empty, and must already
 be added to the DOM.
 
-#### canSplit `(elmt: HTMLElement) => Bool`;
+#### canSplit
+`(elmt: HTMLElement) => Bool`
+
 By default, canSplit returns true, so a single element may be split between page.
 Return false if the element should not be split between two pages,
 for example if it is an image or figure. This
 means the element will be shifted to the next page instead.
 
-#### applySplit `(elmt: HTMLElement, clone: HTMLElement) => null`;
+#### applySplit
+`(elmt: HTMLElement, clone: HTMLElement) => null`
+
 Elements are cloned when they split between pages. Use this method
 to apply extra styling after splitting. For example, only the true
 start of a paragraph should be indented.
 
-#### shouldTraverse `(elmt: HTMLElement) => Bool`;
+#### shouldTraverse
+`(elmt: HTMLElement) => Bool`
+
 By default, shouldTraverse returns false, so nodes are added in chunks when
 possible. Return true if the content region could change size as a result of
 traversal. For example, bindery.js will true if the region contains a footnote.
 
-#### beforeAdd `(elmt: HTMLElement, nextPage: Function) => null`;
+#### beforeAdd
+`(elmt: HTMLElement, nextPage: Function) => null`
+
 Called before an element is added to a region. For example,
 bindery.js uses this opportunity to call nextPage() if this element
 should start on a new page.
 
-#### afterAdd `(elmt: HTMLElement, nextPage: Function) => null`;
+#### afterAdd
+`(elmt: HTMLElement, nextPage: Function) => null`
+
 Called after element is added to a region.
 
 
