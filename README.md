@@ -39,8 +39,8 @@ import { flowIntoRegions } from 'regionize';
 
 await flowIntoRegions({
   // required
-  content,       // HTML Element
-  createRegion,  // () => Region;
+  content,
+  createRegion,
 
   // optional
   canSplit,
@@ -104,10 +104,10 @@ Called after element is added to a region.
 import { Region, flowIntoRegions } from 'regionize';
 
 const createRegion = () => {
-  const div = document.createElement('div');
-  div.style.height = '200px'; // Region must have size
-  div.style.width = '200px';
-  document.body.appendChild(div); // Region must be in DOM
+  const el = document.createElement('div');
+  el.style.height = '200px'; // Region must have size
+  el.style.width = '200px';
+  document.body.appendChild(el); // Region must be in DOM
   return new Region(el); // Instantiate a region with an HTML Element
 }
 
