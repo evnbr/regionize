@@ -3,8 +3,8 @@
 [![Build Status](https://travis-ci.org/evnbr/regionize.svg?branch=master)](https://travis-ci.org/evnbr/regionize)
 [![codecov](https://codecov.io/gh/evnbr/regionize/branch/master/graph/badge.svg)](https://codecov.io/gh/evnbr/regionize)
 
-A bare-bones library to flow HTML through multiple regions,
-like [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful).
+A bare-bones library to flow HTML through multiple regions. Regionize does **not** attempt to polyfill the API of [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful). It makes no attempt to handle the styling of elements that break across regions or any event listeners
+attached to those elements.
 
 The user is responsible for providing the next element when content
 overflows— the library assumes provided elements are empty, already in the document, and
@@ -18,7 +18,7 @@ Powers [bindery.js](https://evanbrooks.info/bindery/).
 npm install --save regionize
 ```
 
-### Create a region
+### Create a Region
 
 ```js
 import { Region } from 'regionize';
@@ -30,7 +30,7 @@ const box = new Region(
 );
 ```
 
-### Start a flow
+### Flow content into Regions
 
 ```js
 import { flowIntoRegions } from 'regionize';
