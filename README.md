@@ -87,14 +87,14 @@ possible. Return true if the content region could change size as a result of
 traversal. For example, bindery.js will true if the region contains a footnote.
 
 #### beforeAdd
-`(elmt: HTMLElement, nextPage: Function) => null`
+`(elmt: HTMLElement, next: Function) => null`
 
 Called before an element is added to a region. For example,
-bindery.js uses this opportunity to call nextPage() if this element
-should start on a new page.
+bindery.js uses this opportunity to call next() if the element
+should start in a new region.
 
 #### afterAdd
-`(elmt: HTMLElement, nextPage: Function) => null`
+`(elmt: HTMLElement, next: Function) => null`
 
 Called after element is added to a region.
 
