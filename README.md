@@ -1,8 +1,8 @@
 # Regionize
 
+[![npm](https://img.shields.io/npm/v/regionize.svg)](https://www.npmjs.com/package/regionize)
 [![Build Status](https://travis-ci.org/evnbr/regionize.svg?branch=master)](https://travis-ci.org/evnbr/regionize)
 [![codecov](https://codecov.io/gh/evnbr/regionize/branch/master/graph/badge.svg)](https://codecov.io/gh/evnbr/regionize)
-![npm](https://img.shields.io/npm/v/regionize.svg)
 ![Bundle Size](https://img.shields.io/bundlephobia/minzip/regionize.svg)
 
 A bare-bones library to flow HTML through multiple regions. Regionize does **not** attempt to polyfill the API of [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful). It makes no attempt to handle the styling of elements that break across regions or any event listeners
@@ -111,21 +111,22 @@ Called after element is added to a region.
 ```js
 import { Region, flowIntoRegions } from 'regionize';
 
+// You should instantiate new Regions from HTML Elements
 const createRegion = () => {
   const el = document.createElement('div');
   el.style.height = '200px'; // Region must have size
   el.style.width = '200px';
   document.body.appendChild(el); // Region must be in DOM
-  return new Region(el); // Instantiate a region with an HTML Element
+  return new Region(el);
 }
 
-// The second part of a paragraph that flows
-// between pages shouldn't be indented
+// Unset text indent when splitting 
 const applySplit = (el, clone) => clone.style.textIndent = '0';
 
-// Keep figures from breaking across pages
+// Prevent figures from breaking across pages
 const canSplit = el => !el.matches('figure');
 
+// flowIntoRegions is an async function
 const render = async () => {
   const content = document.querySelector('#content');
   await flowIntoRegions({ content, createRegion, canSplit, applySplit });
