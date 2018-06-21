@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/evnbr/regionize.svg?branch=master)](https://travis-ci.org/evnbr/regionize)
 [![codecov](https://codecov.io/gh/evnbr/regionize/branch/master/graph/badge.svg)](https://codecov.io/gh/evnbr/regionize)
+![npm](https://img.shields.io/npm/v/regionize.svg)
+![Bundle Size](https://img.shields.io/bundlephobia/minzip/regionize.svg)
 
 A bare-bones library to flow HTML through multiple regions. Regionize does **not** attempt to polyfill the API of [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful). It makes no attempt to handle the styling of elements that break across regions or any event listeners
 attached to those elements.
@@ -67,8 +69,8 @@ be added to the DOM.
 #### canSplit
 `(elmt: HTMLElement) => Bool`
 
-By default, canSplit returns true, so a single element may be split between page.
-Return false if the element should not be split between two pages,
+By default, canSplit returns true, so a single element may be split between
+regions. Return false if the element should not be split between two regions,
 for example if it is an image or figure. This
 means the element will be shifted to the next page instead.
 
@@ -76,8 +78,14 @@ means the element will be shifted to the next page instead.
 `(elmt: HTMLElement, clone: HTMLElement) => null`
 
 Elements are cloned when they split between pages. Use this method
-to apply extra styling after splitting. For example, only the true
-start of a paragraph should be indented.
+to apply extra styling after splitting. For example, you may need to
+specify that only the first half of a split paragraph should be indented. See
+[here](https://evanbrooks.info/bindery/examples/7_custom_split/) for
+an example how to apply additional styling.
+
+By default, regionize will attempt to continue ordered list
+(`<ol>`) numbering across regions, and attempt to preserve the number of table
+cells (`<td>`) within a table row (`<tr>`).
 
 #### shouldTraverse
 `(elmt: HTMLElement) => Bool`
