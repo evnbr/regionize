@@ -8,6 +8,8 @@ import orderedListRule from './orderedListRule';
 import tableRowRule from './tableRowRule';
 
 const noop = () => {};
+const always = () => true;
+const never = () => false;
 
 // flow content through FlowBoxes.
 // This function is not book-specific,
@@ -22,10 +24,11 @@ const flowIntoRegions = async (opts) => {
 
   // optional
   const applySplit = opts.applySplit || noop;
-  const canSplit = opts.canSplit || (() => true);
+  const canSplit = opts.canSplit || always;
   const beforeAdd = opts.beforeAdd || noop;
   const afterAdd = opts.afterAdd || noop;
-  const shouldTraverse = opts.shouldTraverse || (() => false);
+  const didWaitFor = opts.didWaitFor || noop;
+  const shouldTraverse = opts.shouldTraverse || never;
 
   // ____
   // Begin
@@ -139,7 +142,10 @@ const flowIntoRegions = async (opts) => {
 
   safeAddElementNode = async (element) => {
     // Ensure images are loaded before measuring
-    if (isUnloadedImage(element)) await ensureImageLoaded(element);
+    if (isUnloadedImage(element)) {
+      const waitTime = await ensureImageLoaded(element);
+      didWaitFor(waitTime);
+    }
 
     // Transforms before adding
     beforeAdd(element, continueInNextRegion);
