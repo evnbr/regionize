@@ -91,20 +91,25 @@ cells (`<td>`) within a table row (`<tr>`).
 `(elmt: HTMLElement) => Bool`
 
 By default, shouldTraverse returns false, so nodes are added in chunks when
-possible. Return true if the content region could change size as a result of
-traversal. For example, bindery.js will true if the region contains a footnote.
+possible. Return true if to force this element to appear in beforeAdd and afterAdd.
+For example, bindery.js will true if the region contains a footnote,
+since a footnote will shrink the available content area. 
 
 #### beforeAdd
 `(elmt: HTMLElement, next: Function) => null`
 
 Called before an element is added to a region. For example,
 bindery.js uses this opportunity to call next() if the element
-should start in a new region.
+should start in a new region. You must return
+true from shouldTraverse to guarantee this is called for your
+element.
 
 #### afterAdd
 `(elmt: HTMLElement, next: Function) => null`
 
-Called after element is added to a region.
+Called after element is added to a region. You must return
+true from shouldTraverse to guarantee this is called for your
+element.
 
 
 ## Example
