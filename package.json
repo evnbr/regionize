@@ -36,8 +36,9 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "test": "jest && codecov",
-    "coverage": "jest --coverage"
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "test-travis": "jest && codecov"
   },
   "jest": {
     "collectCoverage": true,
