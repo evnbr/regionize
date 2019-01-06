@@ -3,40 +3,44 @@
 // step up the tree to find the first ancestor
 // that can be split, and move all of that descendants
 // to the next page.
-const tryInNextRegion = (region, makeNextRegion, canSplit) => {
+
+import Region from './Region';
+import { RegionMaker, ElementChecker } from './types';
+
+const tryInNextRegion = (region: Region, makeNextRegion: RegionMaker, canSplit: ElementChecker) => {
   if (region.path.length <= 1) {
     throw Error('Regionize: Attempting to move the top-level element');
   }
   const startLength = region.path.length;
 
   // So this node won't get cloned. TODO: this is unclear
-  const elementToMove = region.path.pop();
+  const elementToMove = region.path.pop()!;
 
   // find the nearest splittable parent
-  let nearestElementThatCanBeMoved = elementToMove;
+  let nearestMoveableElement = elementToMove;
   const pathToRestore = [];
   while (region.path.length > 1 && !canSplit(region.currentElement)) {
-    nearestElementThatCanBeMoved = region.path.pop();
-    pathToRestore.unshift(nearestElementThatCanBeMoved);
+    nearestMoveableElement = region.path!.pop()!;
+    pathToRestore.unshift(nearestMoveableElement);
   }
 
   // Once a node is moved to a new page, it should no longer trigger another
   // move. otherwise tall elements will endlessly get shifted to the next page
-  nearestElementThatCanBeMoved.setAttribute('data-bindery-did-move', true);
+  nearestMoveableElement.setAttribute('data-bindery-did-move', 'true');
 
-  const parent = nearestElementThatCanBeMoved.parentNode;
-  parent.removeChild(nearestElementThatCanBeMoved);
+  const parent = nearestMoveableElement.parentNode;
+  parent!.removeChild(nearestMoveableElement);
 
   // If the nearest ancestor would be empty without this node,
   // move it to the next page too.
-  if (region.path.length > 1 && region.currentElement.textContent.trim() === '') {
-    parent.appendChild(nearestElementThatCanBeMoved);
-    nearestElementThatCanBeMoved = region.path.pop();
-    pathToRestore.unshift(nearestElementThatCanBeMoved);
-    nearestElementThatCanBeMoved.parentNode.removeChild(nearestElementThatCanBeMoved);
+  if (region.path!.length > 1 && region.currentElement!.textContent!.trim() === '') {
+    parent!.appendChild(nearestMoveableElement);
+    nearestMoveableElement = region.path!.pop()!;
+    pathToRestore.unshift(nearestMoveableElement);
+    nearestMoveableElement.parentNode!.removeChild(nearestMoveableElement);
   }
 
-  let nextRegion;
+  let nextRegion: Region;
   if (!region.isEmpty) {
     if (region.hasOverflowed()) {
       // Recovery failed, maybe the box contains a large
@@ -52,7 +56,7 @@ const tryInNextRegion = (region, makeNextRegion, canSplit) => {
   }
 
   // append moved node as first in new page
-  nextRegion.currentElement.appendChild(nearestElementThatCanBeMoved);
+  nextRegion.currentElement.appendChild(nearestMoveableElement);
 
   // restore subpath
   pathToRestore.forEach(r => nextRegion.path.push(r));

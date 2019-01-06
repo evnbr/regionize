@@ -1,6 +1,6 @@
-import Region from './Region';
-import tryInNextRegion from './tryInNextRegion';
-import clonePath from './clonePath';
+import Region from './Region.ts';
+import tryInNextRegion from './tryInNextRegion.ts';
+import clonePath from './clonePath.ts';
 
 const el = () => {
   const div = document.createElement('div');

@@ -1,5 +1,5 @@
-import clonePath from './clonePath';
-import orderedListRule from './orderedListRule';
+import clonePath from './clonePath.ts';
+import orderedListRule from './orderedListRule.ts';
 
 const applyRulesStub = (orig, clone, next, deepClone) => {
   orderedListRule(orig, clone, next, deepClone);

@@ -1,4 +1,4 @@
-import clonePath from './clonePath';
+import clonePath from './clonePath.ts';
 
 test('Clone has same tagNames', () => {
   const crumb = [

@@ -1,12 +1,16 @@
 import { yieldIfNecessary } from './schedule';
 import ignoreOverflow from './ignoreOverflow';
-import { isTextNode } from './nodeTypes';
+import { isTextNode } from './typeGuards';
 
 const createTextNode = (document.createTextNode).bind(document);
 
+type Checker = () => boolean;
+type ElementGetter = () => HTMLElement;
+type AddTextResult = Promise<(boolean | Text)>;
+
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
-const addTextNode = async (textNode, parent, hasOverflowed) => {
+const addTextNode = async (textNode: Text, parent: HTMLElement, hasOverflowed: Checker): AddTextResult => {
   parent.appendChild(textNode);
   const success = !hasOverflowed();
   if (!success) parent.removeChild(textNode);
@@ -20,8 +24,8 @@ const addTextNode = async (textNode, parent, hasOverflowed) => {
 //
 // Returns true if all the text fits, false if none fits,
 // or new textnode containing the remainder text.
-const addTextNodeUntilOverflow = async (textNode, parent, hasOverflowed) => {
-  const originalText = textNode.nodeValue;
+const addTextNodeUntilOverflow = async (textNode: Text, parent: HTMLElement, hasOverflowed: Checker): AddTextResult => {
+  const originalText = textNode.nodeValue || "";
   parent.appendChild(textNode);
 
   if (!hasOverflowed() || ignoreOverflow(parent)) {
@@ -68,11 +72,11 @@ const addTextNodeUntilOverflow = async (textNode, parent, hasOverflowed) => {
 
 // Fills text across multiple elements by requesting a continuation
 // once the current element overflows
-const addTextNodeAcrossParents = async (textNode, parent, nextParent, hasOverflowed) => {
+const addTextNodeAcrossParents = async (textNode: Text, parent: HTMLElement, nextParent: ElementGetter, hasOverflowed: Checker): AddTextResult => {
   const result = await addTextNodeUntilOverflow(textNode, parent, hasOverflowed);
-  if (isTextNode(result)) {
+  if (isTextNode(result as Node)) {
     const nextElement = nextParent();
-    return addTextNodeAcrossParents(result, nextElement, nextParent, hasOverflowed);
+    return addTextNodeAcrossParents(result as Text, nextElement, nextParent, hasOverflowed);
   }
   return result;
 };

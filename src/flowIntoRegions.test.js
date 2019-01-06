@@ -1,4 +1,4 @@
-import flowIntoRegions from './flowIntoRegions';
+import flowIntoRegions from './flowIntoRegions.ts';
 
 let time = 0;
 global.performance = { now: () => {

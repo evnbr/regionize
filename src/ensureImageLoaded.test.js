@@ -1,4 +1,4 @@
-import ensureImageLoaded from './ensureImageLoaded';
+import ensureImageLoaded from './ensureImageLoaded.ts';
 
 global.performance = { now: jest.fn() };
 

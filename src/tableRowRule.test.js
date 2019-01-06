@@ -1,5 +1,5 @@
-import clonePath from './clonePath';
-import tableRowRule from './tableRowRule';
+import clonePath from './clonePath.ts';
+import tableRowRule from './tableRowRule.ts';
 
 const applyRulesStub = (orig, clone, next, deepClone) => {
   tableRowRule(orig, clone, next, deepClone);

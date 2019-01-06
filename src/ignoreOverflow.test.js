@@ -1,4 +1,4 @@
-import ignoreOverflow from './ignoreOverflow';
+import ignoreOverflow from './ignoreOverflow.ts';
 
 let div;
 let span;

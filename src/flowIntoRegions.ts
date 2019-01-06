@@ -1,4 +1,6 @@
-import { isTextNode, isUnloadedImage, isContentElement } from './nodeTypes';
+import { ElementCloner, ElementChecker, RuleApplier, RegionMaker } from './types';
+
+import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 import { addTextNode, addTextNodeAcrossParents } from './addTextNode';
 import tryInNextRegion from './tryInNextRegion';
 import ignoreOverflow from './ignoreOverflow';
@@ -6,6 +8,20 @@ import clonePath from './clonePath';
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
 import tableRowRule from './tableRowRule';
+import Region from './Region';
+
+type AddElementResult = Promise<HTMLElement>;
+
+interface FlowOptions {
+  content: HTMLElement,
+  createRegion: RegionMaker,
+  applySplit?: RuleApplier,
+  canSplit?: ElementChecker,
+  shouldTraverse?: ElementChecker,
+  beforeAdd?: (el: HTMLElement, next: RegionMaker) => void,
+  afterAdd?: (el: HTMLElement, next: RegionMaker) => void,
+  didWaitFor?: (t: number) => void,
+}
 
 const noop = () => {};
 const always = () => true;
@@ -14,8 +30,8 @@ const never = () => false;
 // flow content through FlowBoxes.
 // This function is not book-specific,
 // the caller is responsible for managing
-// and creating boxes.
-const flowIntoRegions = async (opts) => {
+// and creating regions.
+const flowIntoRegions = async (opts: FlowOptions) => {
   // required options
   const content = opts.content;
   const createRegion = opts.createRegion;
@@ -37,13 +53,22 @@ const flowIntoRegions = async (opts) => {
   const canSplitCurrent = () => canSplit(currentRegion.currentElement);
   const ignoreCurrentOverflow = () => ignoreOverflow(currentRegion.currentElement);
 
-  const splitRules = (prev, clone, next, deepClone) => {
-    if (prev.tagName === 'OL') orderedListRule(prev, clone, next, deepClone);
-    if (prev.tagName === 'TR') tableRowRule(prev, clone, next, deepClone);
-    applySplit(prev, clone, next, deepClone);
+  const splitRules = (
+    prev: HTMLElement,
+    clone: HTMLElement,
+    nextChild?: HTMLElement,
+    deepClone?: ElementCloner
+  ) => {
+    if (prev.tagName === 'OL') {
+      orderedListRule(prev, clone, nextChild, deepClone);
+    }
+    if (prev.tagName === 'TR' && nextChild && deepClone) {
+      tableRowRule(prev, clone, nextChild, deepClone);
+    }
+    applySplit(prev, clone, nextChild, deepClone);
   };
 
-  const continueInNextRegion = () => {
+  const continueInNextRegion = (): Region => {
     const oldBox = currentRegion;
     currentRegion = createRegion();
 
@@ -52,12 +77,12 @@ const flowIntoRegions = async (opts) => {
     return currentRegion;
   };
 
-  const continuedParent = () => {
+  const continuedParent = (): HTMLElement => {
     continueInNextRegion();
     return currentRegion.currentElement;
   };
 
-  const addTextWithoutChecks = (textNode, parent) => {
+  const addTextWithoutChecks = (textNode: Text, parent: HTMLElement) => {
     parent.appendChild(textNode);
     if (!ignoreCurrentOverflow() && canSplitCurrent()) {
       currentRegion.suppressErrors = true;
@@ -65,7 +90,7 @@ const flowIntoRegions = async (opts) => {
     }
   };
 
-  const addSplittableTextNode = async (textNode) => {
+  const addSplittableTextNode = async (textNode: Text) => {
     const el = currentRegion.currentElement;
     let hasAdded = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
     if (!hasAdded && currentRegion.path.length > 1) {
@@ -79,7 +104,7 @@ const flowIntoRegions = async (opts) => {
     }
   };
 
-  const addWholeTextNode = async (textNode) => {
+  const addWholeTextNode = async (textNode: Text) => {
     let hasAdded = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
     if (!hasAdded && !ignoreCurrentOverflow()) {
       // retry 1
@@ -95,16 +120,16 @@ const flowIntoRegions = async (opts) => {
   // No need to traverse every node if fifts AND
   // none of the contents could change size.
   // Images and custom rules could cause the size to change
-  const canSkipTraversal = (element) => {
+  const canSkipTraversal = (element: HTMLElement) => {
     const containsImage = element.querySelector('img');
     return !containsImage && !shouldTraverse(element);
   };
 
-  let safeAddElementNode;
+  let safeAddElementNode: (el: HTMLElement) => Promise<void>;
 
   // Adds an element node by clearing its childNodes, then inserting them
   // one by one recursively until they overflow the region
-  const addElementNode = async (element) => {
+  const addElementNode = async (element: HTMLElement): AddElementResult => {
     // Insert element
     currentRegion.currentElement.appendChild(element);
     currentRegion.path.push(element);
@@ -113,7 +138,7 @@ const flowIntoRegions = async (opts) => {
       // console.log('maybe short circuit');
       if (!hasOverflowed()) {
         // console.log('did short circuit');
-        return currentRegion.path.pop();
+        return currentRegion.path.pop()!;
       }
     }
 
@@ -132,15 +157,15 @@ const flowIntoRegions = async (opts) => {
       if (isTextNode(child)) {
         await (shouldSplit ? addSplittableTextNode : addWholeTextNode)(child);
       } else if (isContentElement(child)) {
-        await safeAddElementNode(child);
+        await safeAddElementNode(child as HTMLElement);
       } else {
         // Skip comments and unknown nodes
       }
     }
-    return currentRegion.path.pop();
+    return currentRegion.path.pop()!;
   };
 
-  safeAddElementNode = async (element) => {
+  safeAddElementNode = async (element: HTMLElement): Promise<void> => {
     // Ensure images are loaded before measuring
     if (isUnloadedImage(element)) {
       const waitTime = await ensureImageLoaded(element);
