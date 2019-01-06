@@ -1,5 +1,5 @@
-import { RegionMaker } from './types';
-import flowIntoRegions from './flowIntoRegions';
+import { RegionMaker } from '../types';
+import flowIntoRegions from '../flowIntoRegions';
 
 let time = 0;
 (global as any).performance = { now: () => {

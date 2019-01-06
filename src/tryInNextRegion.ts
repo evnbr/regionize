@@ -20,7 +20,7 @@ const tryInNextRegion = (region: Region, makeNextRegion: RegionMaker, canSplit: 
   let nearestMoveableElement = elementToMove;
   const pathToRestore = [];
   while (region.path.length > 1 && !canSplit(region.currentElement)) {
-    nearestMoveableElement = region.path!.pop()!;
+    nearestMoveableElement = region.path.pop()!;
     pathToRestore.unshift(nearestMoveableElement);
   }
 
@@ -33,9 +33,9 @@ const tryInNextRegion = (region: Region, makeNextRegion: RegionMaker, canSplit: 
 
   // If the nearest ancestor would be empty without this node,
   // move it to the next page too.
-  if (region.path!.length > 1 && region.currentElement!.textContent!.trim() === '') {
+  if (region.path.length > 1 && region.currentElement.textContent!.trim() === '') {
     parent!.appendChild(nearestMoveableElement);
-    nearestMoveableElement = region.path!.pop()!;
+    nearestMoveableElement = region.path.pop()!;
     pathToRestore.unshift(nearestMoveableElement);
     nearestMoveableElement.parentNode!.removeChild(nearestMoveableElement);
   }
