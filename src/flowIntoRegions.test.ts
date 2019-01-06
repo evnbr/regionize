@@ -1,3 +1,4 @@
+import { RegionMaker } from './types';
 import flowIntoRegions from './flowIntoRegions';
 
 let time = 0;
@@ -12,8 +13,8 @@ let mockOverflow = (el: HTMLElement) => {
   return el.textContent!.length > 10;
 };
 
-const allText = regions => regions
-  .map(region => region.content.textContent)
+const allText = (regions: any) => regions
+  .map((region: any) => region.content.textContent)
   .join('').replace(/\s+/g, '');
 
 const MockRegion = () => {
@@ -36,9 +37,6 @@ const MockRegion = () => {
     },
     hasOverflowed,
     isReasonableSize: true,
-    suppressErrors: false,
-    isEmpty: false,
-    overflowAmount: 0
   };
   return instance;
 };
@@ -54,15 +52,18 @@ test('Preserves content order (10char overflow)', async () => {
   a.appendChild(b);
   b.appendChild(c);
 
-  const regions = [];
+  const regions: any[] = [];
   const createRegion = () => {
     const r = MockRegion();
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent.length > 10;
-  await flowIntoRegions({ content: a, createRegion });
+  mockOverflow = el => el.textContent!.length > 10;
+  await flowIntoRegions({
+    content: a,
+    createRegion: (createRegion as any as RegionMaker)
+  });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -72,15 +73,18 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   const content = mockEl();
   content.textContent = 'A content. B content. C content.';
 
-  const regions = [];
+  const regions: any[] = [];
   const createRegion = () => {
     const r = MockRegion();
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent.length > 10;
-  await flowIntoRegions({ content, createRegion });
+  mockOverflow = el => el.textContent!.length > 10;
+  await flowIntoRegions({
+    content,
+    createRegion: (createRegion as any as RegionMaker)
+  });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -99,7 +103,7 @@ test('Split elements over many pages (100char overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions = [];
+  const regions: any[] = [];
   const createRegion = () => {
     const r = MockRegion();
     regions.push(r);
@@ -107,7 +111,10 @@ test('Split elements over many pages (100char overflow)', async () => {
   };
 
   mockOverflow = el => el.textContent!.length > 100;
-  await flowIntoRegions({ content, createRegion });
+  await flowIntoRegions({
+    content,
+    createRegion: (createRegion as any as RegionMaker)
+  });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
@@ -126,7 +133,7 @@ test('Split elements over many pages (5children overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions = [];
+  const regions: any[] = [];
   const createRegion = () => {
     const r = MockRegion();
     regions.push(r);
@@ -137,7 +144,10 @@ test('Split elements over many pages (5children overflow)', async () => {
     const count = (el.querySelectorAll('*') || []).length;
     return count > 5;
   };
-  await flowIntoRegions({ content, createRegion });
+  await flowIntoRegions({
+    content,
+    createRegion: (createRegion as any as RegionMaker)
+  });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
@@ -154,8 +164,8 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
     content.appendChild(e);
   }
 
-  const canSplit = el => !el.matches('p');
-  const regions = [];
+  const canSplit = (el: HTMLElement) => !el.matches('p');
+  const regions: any[] = [];
   const createRegion = () => {
     const r = MockRegion();
     regions.push(r);
@@ -164,7 +174,11 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
 
 
   mockOverflow = el => el.textContent!.length > 100;
-  await flowIntoRegions({ content, createRegion, canSplit });
+  await flowIntoRegions({
+    content,
+    createRegion: (createRegion as any as RegionMaker),
+    canSplit
+  });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
