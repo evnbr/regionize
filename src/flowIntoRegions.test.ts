@@ -1,14 +1,16 @@
 import flowIntoRegions from './flowIntoRegions';
 
 let time = 0;
-global.performance = { now: () => {
+(global as any).performance = { now: () => {
   time += 1;
   return time;
 } };
 
 const mockDoc = document;
 const mockEl = (name = 'div') => mockDoc.createElement(name);
-let mockOverflow = el => el.textContent.length > 10;
+let mockOverflow = (el: HTMLElement) => {
+  return el.textContent!.length > 10;
+};
 
 const allText = regions => regions
   .map(region => region.content.textContent)
@@ -20,7 +22,7 @@ const MockRegion = () => {
   element.classList.add('box');
   content.classList.add('content');
   const hasOverflowed = () => mockOverflow(content);
-  const path = [];
+  const path: HTMLElement[] = [];
   const instance = {
     path,
     element,
@@ -28,12 +30,15 @@ const MockRegion = () => {
     get currentElement() {
       return instance.path.length < 1 ? content : instance.path[instance.path.length - 1];
     },
-    setPath: (newPath) => {
+    setPath: (newPath: HTMLElement[]) => {
       instance.path = newPath;
       if (newPath.length > 0) content.appendChild(newPath[0]);
     },
     hasOverflowed,
     isReasonableSize: true,
+    suppressErrors: false,
+    isEmpty: false,
+    overflowAmount: 0
   };
   return instance;
 };
@@ -51,7 +56,7 @@ test('Preserves content order (10char overflow)', async () => {
 
   const regions = [];
   const createRegion = () => {
-    const r = MockRegion(mockEl('div'));
+    const r = MockRegion();
     regions.push(r);
     return r;
   };
@@ -69,7 +74,7 @@ test('Splits a single div over many pages (10char overflow)', async () => {
 
   const regions = [];
   const createRegion = () => {
-    const r = MockRegion(mockEl('div'));
+    const r = MockRegion();
     regions.push(r);
     return r;
   };
@@ -96,12 +101,12 @@ test('Split elements over many pages (100char overflow)', async () => {
 
   const regions = [];
   const createRegion = () => {
-    const r = MockRegion(mockEl('div'));
+    const r = MockRegion();
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent.length > 100;
+  mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions({ content, createRegion });
 
   expect(regions.length).toBe(3);
@@ -123,7 +128,7 @@ test('Split elements over many pages (5children overflow)', async () => {
 
   const regions = [];
   const createRegion = () => {
-    const r = MockRegion(mockEl('div'));
+    const r = MockRegion();
     regions.push(r);
     return r;
   };
@@ -152,13 +157,13 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   const canSplit = el => !el.matches('p');
   const regions = [];
   const createRegion = () => {
-    const r = MockRegion(mockEl('div'));
+    const r = MockRegion();
     regions.push(r);
     return r;
   };
 
 
-  mockOverflow = el => el.textContent.length > 100;
+  mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions({ content, createRegion, canSplit });
   expect(regions.length).toBe(3);
 

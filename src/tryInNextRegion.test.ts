@@ -9,7 +9,7 @@ const el = () => {
 };
 
 const noop = () => {};
-const mockRegion = (path) => {
+const mockRegion = (path?: HTMLElement[]) => {
   const flow = new Region(document.createElement('div'));
   if (path) {
     flow.content.appendChild(path[0]);
@@ -80,7 +80,7 @@ test('Shifts two elements when parent can\t split', () => {
     nextRegion.setPath(newPath);
     return nextRegion;
   };
-  const canSplit = elmt => elmt !== c;
+  const canSplit = (elmt: HTMLElement) => elmt !== c;
 
   tryInNextRegion(firstRegion, next, canSplit);
   expect(firstRegion.path).toEqual([a, b]);
@@ -97,7 +97,7 @@ test('Shifts three elements when grandparent can\t split', () => {
     nextRegion.setPath(newPath);
     return nextRegion;
   };
-  const canSplit = elmt => elmt !== c && elmt !== b;
+  const canSplit = (elmt: HTMLElement) => elmt !== c && elmt !== b;
 
   tryInNextRegion(firstRegion, next, canSplit);
   expect(firstRegion.path).toEqual([a]);
