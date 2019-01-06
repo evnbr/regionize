@@ -5,14 +5,16 @@
 [![codecov](https://codecov.io/gh/evnbr/regionize/branch/master/graph/badge.svg)](https://codecov.io/gh/evnbr/regionize)
 ![Bundle Size](https://img.shields.io/bundlephobia/minzip/regionize.svg)
 
-A bare-bones library to flow HTML through multiple regions. Regionize does **not** attempt to polyfill the API of [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful). It makes no attempt to handle the styling of elements that break across regions or any event listeners
-attached to those elements.
+A bare-bones, asynchronous javascript library to flow HTML content across a
+series of separate elements. It makes no attempt to handle the styling of
+elements that break across regions.
 
+Note that Regionize does **not** attempt to polyfill the API of [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful).
 The user is responsible for providing the next element when content
-overflows— the library assumes provided elements are empty, already in the document, and
-have an intrinsic height.
+overflows through a javascript callback. The caller must ensure provided
+elements are empty, already in the document, and have an intrinsic size.
 
-Powers [bindery.js](https://evanbrooks.info/bindery/).
+Regionize powers [bindery.js](https://evanbrooks.info/bindery/).
 
 ## Usage
 
