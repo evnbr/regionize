@@ -8,4 +8,14 @@ module.exports = {
       tsConfig: 'tsconfig.json',
     },
   },
+  testRegex: '^.+\\.test.ts$',
+  testURL: 'http://localhost/',
+  moduleFileExtensions: [
+    'ts',
+    'tsx',
+    'js',
+    'jsx',
+    'json',
+    'node',
+  ],
 };

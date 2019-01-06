@@ -1,7 +1,7 @@
-import ignoreOverflow from './ignoreOverflow.ts';
+import ignoreOverflow from './ignoreOverflow';
 
-let div;
-let span;
+let div: HTMLElement;
+let span: HTMLElement;
 beforeEach(() => {
   div = document.createElement('div');
   span = document.createElement('span');
@@ -14,12 +14,12 @@ describe('ignoreOverflow', () => {
   });
 
   test('Ignores overflow for marked elements', () => {
-    span.setAttribute('data-ignore-overflow', true);
+    span.setAttribute('data-ignore-overflow', 'true');
     expect(ignoreOverflow(span)).toBe(true);
   });
 
   test('Ignores overflow for child of marked element', () => {
-    div.setAttribute('data-ignore-overflow', true);
+    div.setAttribute('data-ignore-overflow', 'true');
     expect(ignoreOverflow(span)).toBe(true);
   });
 });

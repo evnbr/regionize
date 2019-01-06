@@ -1,4 +1,4 @@
-import clonePath from './clonePath.ts';
+import clonePath from './clonePath';
 
 test('Clone has same tagNames', () => {
   const crumb = [
@@ -15,7 +15,7 @@ test('Clone has same tagNames', () => {
   expect(newCrumb[2].tagName).toBe('SPAN');
 });
 
-const applyRulesStub = (a, b) => {
+const applyRulesStub = (a: HTMLElement, b: HTMLElement) => {
   a.classList.add('toNext');
   b.classList.add('fromPrev');
 };

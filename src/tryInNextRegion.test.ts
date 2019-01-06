@@ -1,6 +1,6 @@
-import Region from './Region.ts';
-import tryInNextRegion from './tryInNextRegion.ts';
-import clonePath from './clonePath.ts';
+import Region from './Region';
+import tryInNextRegion from './tryInNextRegion';
+import clonePath from './clonePath';
 
 const el = () => {
   const div = document.createElement('div');
@@ -24,10 +24,10 @@ const mockRegion = (path) => {
   return flow;
 };
 
-let a;
-let b;
-let c;
-let d;
+let a: HTMLElement;
+let b: HTMLElement;
+let c: HTMLElement;
+let d: HTMLElement;
 beforeEach(() => {
   a = el();
   b = el();

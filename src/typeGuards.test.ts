@@ -1,4 +1,4 @@
-import { isTextNode, isUnloadedImage, isContentElement } from './nodeTypes.ts';
+import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 
 const textNode = document.createTextNode('sample');
 const div = document.createElement('div');

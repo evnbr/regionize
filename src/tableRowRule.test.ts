@@ -1,9 +1,13 @@
-import clonePath from './clonePath.ts';
-import tableRowRule from './tableRowRule.ts';
+import clonePath from './clonePath';
+import tableRowRule from './tableRowRule';
 
-const applyRulesStub = (orig, clone, next, deepClone) => {
+const applyRulesStub = (orig: any, clone: any, next: any, deepClone: any) => {
   tableRowRule(orig, clone, next, deepClone);
 };
+
+const toEl = (node: Node): HTMLElement => {
+  return node as HTMLElement
+}
 
 test('Cloned row copies first column', async () => {
   const tr = document.createElement('tr');
@@ -19,10 +23,10 @@ test('Cloned row copies first column', async () => {
   const newCrumb = clonePath(crumb, applyRulesStub);
 
   expect(newCrumb[0].childNodes.length).toBe(2);
-  expect(newCrumb[0].childNodes[0].tagName).toBe('TH');
-  expect(newCrumb[0].childNodes[0].firstElementChild.tagName).toBe('H3');
-  expect(newCrumb[0].childNodes[0].firstElementChild.textContent).toBe('Row 1');
-  expect(newCrumb[0].childNodes[1].tagName).toBe('TD');
+  expect(toEl(newCrumb[0].childNodes[0]).tagName).toBe('TH');
+  expect(toEl(newCrumb[0].childNodes[0]).firstElementChild!.tagName).toBe('H3');
+  expect(toEl(newCrumb[0].childNodes[0]).firstElementChild!.textContent).toBe('Row 1');
+  expect(toEl(newCrumb[0].childNodes[1]).tagName).toBe('TD');
   expect(newCrumb[1]).toBe(newCrumb[0].childNodes[1]);
 });
 
@@ -46,13 +50,13 @@ test('Cloned row copies first three column', () => {
   const newCrumb = clonePath(crumb, applyRulesStub);
 
   expect(newCrumb[0].childNodes.length).toBe(4);
-  expect(newCrumb[0].childNodes[0].tagName).toBe('TH');
+  expect(toEl(newCrumb[0].childNodes[0]).tagName).toBe('TH');
   expect(newCrumb[0].childNodes[0].textContent).toBe('id');
-  expect(newCrumb[0].childNodes[1].tagName).toBe('TD');
+  expect(toEl(newCrumb[0].childNodes[1]).tagName).toBe('TD');
   expect(newCrumb[0].childNodes[1].textContent).toBe('first');
-  expect(newCrumb[0].childNodes[2].tagName).toBe('TD');
+  expect(toEl(newCrumb[0].childNodes[2]).tagName).toBe('TD');
   expect(newCrumb[0].childNodes[2].textContent).toBe('middle');
-  expect(newCrumb[0].childNodes[3].tagName).toBe('TD');
+  expect(toEl(newCrumb[0].childNodes[3]).tagName).toBe('TD');
 
   // 3rd column overflowed, so would not have content
   expect(newCrumb[0].childNodes[3].textContent).toBe('');
