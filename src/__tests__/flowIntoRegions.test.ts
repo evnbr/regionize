@@ -41,7 +41,6 @@ const MockRegion = () => {
   return instance;
 };
 
-
 test('Preserves content order (10char overflow)', async () => {
   const a = mockEl('div');
   const b = mockEl('p');
@@ -172,7 +171,6 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
     return r;
   };
 
-
   mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions({
     content,
@@ -189,4 +187,25 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   expect(allText(regions)).toBe(expectedText);
   expect(regions.map(region => region.element.textContent.length > 100))
     .toEqual([false, false, false]);
+});
+
+test('Throws Errors when missing required parameters', async () => {
+  expect((async () => {
+    await flowIntoRegions({} as any);
+  })()).rejects.toThrow();
+
+  expect((async () => {
+    await flowIntoRegions({ content: true } as any);
+  })()).rejects.toThrow();
+
+  expect((async () => {
+    await flowIntoRegions({ createRegion: () => false, } as any);
+  })()).rejects.toThrow();
+
+  expect((async () => {
+    await flowIntoRegions({
+      content: document.createElement('div'),
+      createRegion: () => MockRegion(),
+    } as any);
+  })()).resolves.not.toThrow();
 });
