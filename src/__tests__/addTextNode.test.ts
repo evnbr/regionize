@@ -1,4 +1,4 @@
-import { addTextNode, addTextNodeUntilOverflow, addTextNodeAcrossParents } from '../addTextNode';
+import { addTextNode, fillWordsUntilOverflow, addSplittableText } from '../addTextNode';
 
 (global as any).performance = { now: jest.fn() };
 
@@ -36,13 +36,13 @@ describe('addTextNode', () => {
 // ----
 //
 // addTextUntilOverflow
-describe('addTextUntilOverflow', () => {
+describe('fillUntilOverflow', () => {
   test('cancels if page instantly overflows', () => {
     const mockParent = document.createElement('div');
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => true;
 
-    addTextNodeUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
+    fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
       expect(result.completed).toBe(false);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
@@ -54,7 +54,7 @@ describe('addTextUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => false;
 
-    addTextNodeUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
+    fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
       expect(result.completed).toBe(true);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBe(mockParent);
@@ -66,7 +66,7 @@ describe('addTextUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const page = () => textNode.nodeValue !== '';
 
-    addTextNodeUntilOverflow(textNode, mockParent, page).then((result) => {
+    fillWordsUntilOverflow(textNode, mockParent, page).then((result) => {
       expect(result.completed).toBe(false);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
@@ -78,7 +78,7 @@ describe('addTextUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 4;
 
-    return addTextNodeUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
+    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
       expect(textNode.nodeValue).toBe('Test');
       expect(textNode.parentNode).toBe(mockParent);
 
@@ -94,7 +94,7 @@ describe('addTextUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 7;
 
-    return addTextNodeUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
+    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
       expect(textNode.nodeValue).toBe('Test');
       expect(textNode.parentNode).toBe(mockParent);
 
@@ -110,7 +110,7 @@ describe('addTextUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 2;
 
-    return addTextNodeUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
+    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
       expect(result.completed).toBe(false);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
@@ -128,7 +128,7 @@ describe('addTextNodeAcrossParents', () => {
     const next = () => document.createElement('div');
     const hasOverflowed = () => true;
 
-    return addTextNodeAcrossParents(textNode, p1, next, hasOverflowed).then((result) => {
+    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
       expect(result.completed).toBe(false);
       expect(p1.textContent).toBe('');
     });
@@ -141,7 +141,7 @@ describe('addTextNodeAcrossParents', () => {
     const next = () => p2;
     const hasOverflowed = () => false;
 
-    return addTextNodeAcrossParents(textNode, p1, next, hasOverflowed).then((result) => {
+    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
       expect(result.completed).toBe(true);
       expect(p1.textContent).toBe(testContent);
       expect(p2.textContent).toBe('');
@@ -155,7 +155,7 @@ describe('addTextNodeAcrossParents', () => {
     const next = () => p2;
     const hasOverflowed = () => p1.textContent!.length > 4;
 
-    return addTextNodeAcrossParents(textNode, p1, next, hasOverflowed).then((result) => {
+    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
       expect(result.completed).toBe(true);
       expect(p1.textContent).toBe('Test');
       expect(p2.textContent).toBe(' text content');
@@ -171,7 +171,7 @@ describe('addTextNodeAcrossParents', () => {
     const next = () => nextPages.pop()!;
     const hasOverflowed = () => p1.textContent!.length > 4 || p2.textContent!.length > 6;
 
-    return addTextNodeAcrossParents(textNode, p1, next, hasOverflowed).then((result: any) => {
+    return addSplittableText(textNode, p1, next, hasOverflowed).then((result: any) => {
       expect(result.completed).toBe(true);
       expect(p1.textContent).toBe('Test');
       expect(p2.textContent).toBe(' text');

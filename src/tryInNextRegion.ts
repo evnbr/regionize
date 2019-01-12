@@ -5,9 +5,9 @@
 // to the next page.
 
 import Region from './Region';
-import { RegionMaker, ElementChecker } from './types';
+import { RegionGetter, ElementChecker } from './types';
 
-const tryInNextRegion = (region: Region, makeNextRegion: RegionMaker, canSplit: ElementChecker) => {
+const tryInNextRegion = (region: Region, makeNextRegion: RegionGetter, canSplit: ElementChecker) => {
   if (region.path.length <= 1) {
     throw Error('Regionize: Attempting to move the top-level element');
   }

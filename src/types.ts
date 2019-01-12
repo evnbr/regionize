@@ -1,16 +1,10 @@
 import Region from './Region';
 
-export type ElementCloner = (el: HTMLElement) => HTMLElement;
-
 export type ElementChecker = (el: HTMLElement) => boolean;
+export type ElementCloner = (el: HTMLElement) => HTMLElement;
+export type ElementGetter = () => HTMLElement;
 
-export type RegionMaker = () => Region;
-
-export type LayoutResult = {
-    completed: boolean,
-    remainder?: Text,
-    waitTime?: number,
-}
+export type RegionGetter = () => Region;
 
 export type RuleApplier = (
     original: HTMLElement,

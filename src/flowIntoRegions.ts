@@ -1,7 +1,7 @@
-import { ElementCloner, ElementChecker, RuleApplier, RegionMaker } from './types';
-
+import { ElementCloner, ElementChecker, RuleApplier, RegionGetter } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
-import { addTextNode, addTextNodeAcrossParents } from './addTextNode';
+
+import { addTextNode, addSplittableText, TextLayoutResult } from './addTextNode';
 import tryInNextRegion from './tryInNextRegion';
 import ignoreOverflow from './ignoreOverflow';
 import clonePath from './clonePath';
@@ -14,12 +14,12 @@ type AddElementResult = Promise<HTMLElement>;
 
 interface FlowOptions {
   content: HTMLElement,
-  createRegion: RegionMaker,
+  createRegion: RegionGetter,
   applySplit?: RuleApplier,
   canSplit?: ElementChecker,
   shouldTraverse?: ElementChecker,
-  beforeAdd?: (el: HTMLElement, next: RegionMaker) => void,
-  afterAdd?: (el: HTMLElement, next: RegionMaker) => void,
+  beforeAdd?: (el: HTMLElement, next: RegionGetter) => void,
+  afterAdd?: (el: HTMLElement, next: RegionGetter) => void,
   didWaitFor?: (t: number) => void,
 }
 
@@ -28,11 +28,9 @@ const always = () => true;
 const never = () => false;
 
 // flow content through FlowBoxes.
-// This function is not book-specific,
 // the caller is responsible for managing
 // and creating regions.
 const flowIntoRegions = async (opts: FlowOptions) => {
-  // required options
   const content = opts.content;
   const createRegion = opts.createRegion;
   if (!content) throw Error('content not specified');
@@ -46,33 +44,32 @@ const flowIntoRegions = async (opts: FlowOptions) => {
   const didWaitFor = opts.didWaitFor || noop;
   const shouldTraverse = opts.shouldTraverse || never;
 
-  // ____
-  // Begin
+  // currentRegion should hold the only state that persists during traversal.
   let currentRegion = createRegion();
   const hasOverflowed = () => currentRegion.hasOverflowed();
   const canSplitCurrent = () => canSplit(currentRegion.currentElement);
   const ignoreCurrentOverflow = () => ignoreOverflow(currentRegion.currentElement);
 
   const splitRules = (
-    prev: HTMLElement,
+    original: HTMLElement,
     clone: HTMLElement,
     nextChild?: HTMLElement,
     deepClone?: ElementCloner
   ) => {
-    if (prev.tagName === 'OL') {
-      orderedListRule(prev, clone, nextChild, deepClone);
+    if (original.tagName === 'OL') {
+      orderedListRule(original, clone, nextChild);
     }
-    if (prev.tagName === 'TR' && nextChild && deepClone) {
-      tableRowRule(prev, clone, nextChild, deepClone);
+    if (original.tagName === 'TR' && nextChild && deepClone) {
+      tableRowRule(original, clone, nextChild, deepClone);
     }
-    applySplit(prev, clone, nextChild, deepClone);
+    applySplit(original, clone, nextChild, deepClone);
   };
 
   const continueInNextRegion = (): Region => {
-    const oldBox = currentRegion;
+    const prevRegion = currentRegion;
     currentRegion = createRegion();
 
-    const newPath = clonePath(oldBox.path, splitRules);
+    const newPath = clonePath(prevRegion.path, splitRules);
     currentRegion.setPath(newPath);
     return currentRegion;
   };
@@ -82,90 +79,47 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     return currentRegion.currentElement;
   };
 
-  const addTextWithoutChecks = (textNode: Text, parent: HTMLElement) => {
-    parent.appendChild(textNode);
-    if (!ignoreCurrentOverflow() && canSplitCurrent()) {
-      currentRegion.suppressErrors = true;
-      continueInNextRegion();
-    }
-  };
-
-  const addSplittableTextNode = async (textNode: Text) => {
+  const addText = async (textNode: Text, isSplittable: boolean) => {
     const el = currentRegion.currentElement;
-    let result = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
-    if (!result.completed && currentRegion.path.length > 1) {
-      // retry 1
-      tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-      result = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
+    let textLayout: TextLayoutResult;
+
+    if (isSplittable) {
+      // Add the text word by word, adding pages as needed
+      textLayout = await addSplittableText(textNode, el, continuedParent, hasOverflowed);
+      if (!textLayout.completed && currentRegion.path.length > 1) {
+        tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
+        textLayout = await addSplittableText(textNode, el, continuedParent, hasOverflowed);
+      }
     }
-    if (!result.completed) {
-      // retry 2
-      addTextWithoutChecks(textNode, currentRegion.currentElement);
-    }
-  };
-
-  const addWholeTextNode = async (textNode: Text) => {
-    let result = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
-    if (!result.completed && !ignoreCurrentOverflow()) {
-      // retry 1
-      tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-      result = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
-    }
-    if (!result.completed) {
-      // retry 2
-      addTextWithoutChecks(textNode, currentRegion.currentElement);
-    }
-  };
-
-  // No need to traverse every node if fifts AND
-  // none of the contents could change size.
-  // Images and custom rules could cause the size to change
-  const canSkipTraversal = (element: HTMLElement) => {
-    const containsImage = element.querySelector('img');
-    return !containsImage && !shouldTraverse(element);
-  };
-
-  let safeAddElementNode: (el: HTMLElement) => Promise<void>;
-
-  // Adds an element node by clearing its childNodes, then inserting them
-  // one by one recursively until they overflow the region
-  const addElementNode = async (element: HTMLElement): AddElementResult => {
-    // Insert element
-    currentRegion.currentElement.appendChild(element);
-    currentRegion.path.push(element);
-
-    if (canSkipTraversal(element)) {
-      if (!hasOverflowed()) {
-        // Short circuit
-        return currentRegion.path.pop()!;
+    else {
+      // Add the text as a block, trying a new page if needed
+      textLayout = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
+      if (!textLayout.completed && !ignoreCurrentOverflow()) {
+        tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
+        textLayout = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
       }
     }
 
-    // Clear element
-    const childNodes = [...element.childNodes];
-    element.innerHTML = '';
-
-    // Overflows when empty
-    if (hasOverflowed() && !ignoreCurrentOverflow() && canSplitCurrent()) {
-      tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-    }
-
-    const shouldSplit = canSplit(element) && !ignoreOverflow(element);
-
-    for (const child of childNodes) {
-      if (isTextNode(child)) {
-        await (shouldSplit ? addSplittableTextNode : addWholeTextNode)(child);
-      } else if (isContentElement(child)) {
-        await safeAddElementNode(child as HTMLElement);
-      } else {
-        // Skip comments and unknown nodes
+    // Something went wrong. Insert the text anyways, ignoring overflow,
+    // and move onto the next region.
+    if (!textLayout.completed) {
+      currentRegion.currentElement.appendChild(textNode);
+      if (!ignoreCurrentOverflow() && canSplitCurrent()) {
+        currentRegion.suppressErrors = true;
+        continueInNextRegion();
       }
     }
-    return currentRegion.path.pop()!;
+  }
+
+  const shouldTraverseChildren = (element: HTMLElement): boolean => {
+    if (hasOverflowed()) return true;
+    if (element.querySelector('img')) return true;
+    if (shouldTraverse(element)) return true;
+    return false;
   };
 
-  safeAddElementNode = async (element: HTMLElement): Promise<void> => {
-    // Ensure images are loaded before measuring
+  const addElement = async (element: HTMLElement): Promise<void> => {
+    // Ensure images are loaded before testing for overflow
     if (isUnloadedImage(element)) {
       const waitTime = await ensureImageLoaded(element);
       didWaitFor(waitTime);
@@ -174,13 +128,44 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     // Transforms before adding
     beforeAdd(element, continueInNextRegion);
 
-    const addedElement = await addElementNode(element);
+    // Append element and push onto the the stack
+    currentRegion.currentElement.appendChild(element);
+    currentRegion.path.push(element);
 
-    // Transforms after adding
+    if (shouldTraverseChildren(element)) {
+      // Only if the region overflowed, the content contains
+      // an image, or the caller has requested a custom traversal.
+      await clearAndAddChildren(element);
+    }
+
+    // We're done: Pop off the stack and do any cleanup
+    const addedElement = currentRegion.path.pop()!;  
     afterAdd(addedElement, continueInNextRegion);
   };
 
-  return safeAddElementNode(content);
+  const clearAndAddChildren = async (element: HTMLElement) => {
+    const childNodes = [...element.childNodes];
+    element.innerHTML = '';
+
+    if (hasOverflowed() && !ignoreCurrentOverflow() && canSplitCurrent()) {
+      // Overflows when empty
+      tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
+    }
+
+    const shouldSplit = canSplit(element) && !ignoreOverflow(element);
+
+    for (const child of childNodes) {
+      if (isTextNode(child)) {
+        await addText(child, shouldSplit);
+      } else if (isContentElement(child)) {
+        await addElement(child);
+      } else {
+        // Skip comments and unknown nodes
+      }
+    }
+  }
+
+  return addElement(content);
 };
 
 export default flowIntoRegions;

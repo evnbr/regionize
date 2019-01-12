@@ -1,7 +1,7 @@
 const isTextNode = (node: Node): node is Text => {
     return node.nodeType === Node.TEXT_NODE;
 };
-const isElement = (node: Node): node is Element => {
+const isElement = (node: Node): node is HTMLElement => {
     return node.nodeType === Node.ELEMENT_NODE;
 };
 const isScript = (node: Element): boolean => {
@@ -13,7 +13,7 @@ const isImage = (node: Element): node is HTMLImageElement => {
 const isUnloadedImage = (node: Element): node is HTMLImageElement => {
     return isImage(node) && !(node).naturalWidth;
 };
-const isContentElement = (node: Node): boolean => {
+const isContentElement = (node: Node): node is HTMLElement => {
     return isElement(node) && !isScript(node);
 };
 

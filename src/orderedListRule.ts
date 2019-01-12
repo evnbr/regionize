@@ -1,10 +1,7 @@
-import { ElementCloner } from './types';
-
 const preserveNumbering = (
   original: HTMLElement,
   clone: HTMLElement,
   nextChild?: HTMLElement,
-  deepClone?: ElementCloner
 ): void => {
   // restart numbering
   let prevStart = 1;
