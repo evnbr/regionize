@@ -1,6 +1,5 @@
 import { yieldIfNecessary } from './schedule';
 import ignoreOverflow from './ignoreOverflow';
-import { isTextNode } from './typeGuards';
 import { LayoutResult } from './types';
 
 const createTextNode: (text: string) => Text = (document.createTextNode).bind(document);
@@ -36,7 +35,6 @@ const previousNonSpaceIndex = (text: string, startIndex: number): number => {
   return newIndex;
 }
 
-
 // Try adding a text node by incrementally adding words
 // until it just barely doesnt overflow.
 //
@@ -55,23 +53,23 @@ const addTextNodeUntilOverflow = async (
   }
 
   // Add letter by letter until overflow
-  let idx = 0;
-  textNode.nodeValue = originalText.substr(0, idx);
+  let proposedEnd = 0;
+  textNode.nodeValue = originalText.substr(0, proposedEnd);
 
-  while (!hasOverflowed() && idx < originalText.length) {
-    idx = nextNonSpaceIndex(originalText, idx)
+  while (!hasOverflowed() && proposedEnd < originalText.length) {
+    proposedEnd = nextNonSpaceIndex(originalText, proposedEnd)
 
-    if (idx < originalText.length) {
+    if (proposedEnd < originalText.length) {
       // reveal more text
-      textNode.nodeValue = originalText.substr(0, idx);
+      textNode.nodeValue = originalText.substr(0, proposedEnd);
       await yieldIfNecessary();
     }
   }
 
   // Back out to word boundary
-  idx = previousNonSpaceIndex(originalText, idx);
+  const wordEnd = previousNonSpaceIndex(originalText, proposedEnd);
 
-  if (idx < 1) {
+  if (wordEnd < 1) {
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     parent.removeChild(textNode);
@@ -79,8 +77,8 @@ const addTextNodeUntilOverflow = async (
   }
 
   // trim text to word
-  const fittingText = originalText.substr(0, idx);
-  const overflowingText = originalText.substr(idx);
+  const fittingText = originalText.substr(0, wordEnd);
+  const overflowingText = originalText.substr(wordEnd);
   textNode.nodeValue = fittingText;
 
   // Create a new text node for the next flow box
