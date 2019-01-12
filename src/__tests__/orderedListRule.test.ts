@@ -1,8 +1,8 @@
 import clonePath from '../clonePath';
 import orderedListRule from '../orderedListRule';
 
-const applyRulesStub = (orig: any, clone: any, next: any, deepClone: any) => {
-  orderedListRule(orig, clone, next, deepClone);
+const applyRulesStub = (orig: any, clone: any, next: any) => {
+  orderedListRule(orig, clone, next);
 };
 
 describe('Ordered Lists', () => {
