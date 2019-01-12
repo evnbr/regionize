@@ -8,19 +8,20 @@
 // The transition can be customized by setting a Split rule,
 // which lets you add classes to the original and cloned element
 // to customize styling.
+import { RuleApplier } from './types';
 
-const clonePath = (oldPath, applyRules) => {
+const clonePath = (oldPath: HTMLElement[], applyRules: RuleApplier): HTMLElement[] => {
   const newPath = [];
 
-  const deepClone = (el) => {
-    const clone = el.cloneNode(true); // deep clone, could be th > h3 > span;
+  const deepClone = (el: HTMLElement): HTMLElement => {
+    const clone = el.cloneNode(true) as HTMLElement; // deep clone, could be th > h3 > span;
     applyRules(el, clone);
     return clone;
   };
 
   for (let i = oldPath.length - 1; i >= 0; i -= 1) {
     const original = oldPath[i];
-    const clone = original.cloneNode(false); // shallow
+    const clone = original.cloneNode(false) as HTMLElement; // shallow
     const nextChild = oldPath[i + 1];
     clone.innerHTML = '';
 

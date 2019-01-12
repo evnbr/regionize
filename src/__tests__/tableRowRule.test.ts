@@ -1,7 +1,7 @@
-import clonePath from './clonePath';
-import tableRowRule from './tableRowRule';
+import clonePath from '../clonePath';
+import tableRowRule from '../tableRowRule';
 
-const applyRulesStub = (orig, clone, next, deepClone) => {
+const applyRulesStub = (orig: any, clone: any, next: any, deepClone: any) => {
   tableRowRule(orig, clone, next, deepClone);
 };
 
@@ -18,12 +18,14 @@ test('Cloned row copies first column', async () => {
   const crumb = [tr, td];
   const newCrumb = clonePath(crumb, applyRulesStub);
 
+  const _th = newCrumb[0].childNodes[0] as any;
+  const _td = newCrumb[0].childNodes[1] as any;
   expect(newCrumb[0].childNodes.length).toBe(2);
-  expect(newCrumb[0].childNodes[0].tagName).toBe('TH');
-  expect(newCrumb[0].childNodes[0].firstElementChild.tagName).toBe('H3');
-  expect(newCrumb[0].childNodes[0].firstElementChild.textContent).toBe('Row 1');
-  expect(newCrumb[0].childNodes[1].tagName).toBe('TD');
-  expect(newCrumb[1]).toBe(newCrumb[0].childNodes[1]);
+  expect(_th.tagName).toBe('TH');
+  expect(_th.firstElementChild!.tagName).toBe('H3');
+  expect(_th.firstElementChild!.textContent).toBe('Row 1');
+  expect(_td.tagName).toBe('TD');
+  expect(newCrumb[1]).toBe(_td);
 });
 
 test('Cloned row copies first three column', () => {
@@ -45,16 +47,20 @@ test('Cloned row copies first three column', () => {
   const crumb = [tr, td3];
   const newCrumb = clonePath(crumb, applyRulesStub);
 
+  const _th = newCrumb[0].childNodes[0] as any;
+  const _td = newCrumb[0].childNodes[1] as any;
+  const _td2 = newCrumb[0].childNodes[2] as any;
+  const _td3 = newCrumb[0].childNodes[3] as any;
   expect(newCrumb[0].childNodes.length).toBe(4);
-  expect(newCrumb[0].childNodes[0].tagName).toBe('TH');
-  expect(newCrumb[0].childNodes[0].textContent).toBe('id');
-  expect(newCrumb[0].childNodes[1].tagName).toBe('TD');
-  expect(newCrumb[0].childNodes[1].textContent).toBe('first');
-  expect(newCrumb[0].childNodes[2].tagName).toBe('TD');
-  expect(newCrumb[0].childNodes[2].textContent).toBe('middle');
-  expect(newCrumb[0].childNodes[3].tagName).toBe('TD');
+  expect(_th.tagName).toBe('TH');
+  expect(_th.textContent).toBe('id');
+  expect(_td.tagName).toBe('TD');
+  expect(_td.textContent).toBe('first');
+  expect(_td2.tagName).toBe('TD');
+  expect(_td2.textContent).toBe('middle');
+  expect(_td3.tagName).toBe('TD');
 
   // 3rd column overflowed, so would not have content
-  expect(newCrumb[0].childNodes[3].textContent).toBe('');
-  expect(newCrumb[1]).toBe(newCrumb[0].childNodes[3]);
+  expect(_td3.textContent).toBe('');
+  expect(newCrumb[1]).toBe(_td3);
 });

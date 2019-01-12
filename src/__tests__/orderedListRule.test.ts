@@ -1,8 +1,8 @@
-import clonePath from './clonePath';
-import orderedListRule from './orderedListRule';
+import clonePath from '../clonePath';
+import orderedListRule from '../orderedListRule';
 
-const applyRulesStub = (orig, clone, next, deepClone) => {
-  orderedListRule(orig, clone, next, deepClone);
+const applyRulesStub = (orig: any, clone: any, next: any) => {
+  orderedListRule(orig, clone, next);
 };
 
 describe('Ordered Lists', () => {
@@ -32,7 +32,7 @@ describe('Ordered Lists', () => {
 
   test('Numbering starts from previous start value', () => {
     const ol = document.createElement('ol');
-    ol.setAttribute('start', 5);
+    ol.setAttribute('start', '5');
     ol.appendChild(document.createElement('li'));
     ol.appendChild(document.createElement('li'));
 

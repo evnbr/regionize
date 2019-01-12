@@ -1,5 +1,6 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
+import typescript from 'rollup-plugin-typescript2';
 import minify from 'rollup-plugin-babel-minify';
 import babel from 'rollup-plugin-babel';
 
@@ -9,7 +10,7 @@ import pkg from './package.json';
 const extend = (a, b) => Object.assign({}, a, b);
 
 const baseConfig = {
-  input: 'src/index.js',
+  input: 'src/index.ts',
 };
 
 const baseOutput = {
@@ -28,6 +29,7 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
+      typescript(),
     ],
   }),
 
@@ -41,6 +43,7 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
+      typescript(),
       minify({
         comments: false,
       }),
@@ -56,6 +59,7 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
+      typescript(),
       babel({
         runtimeHelpers: true,
         exclude: 'node_modules/**',
@@ -71,6 +75,7 @@ export default [
     }),
     plugins: [
       resolve(),
+      typescript(),
     ],
   }),
 ];
