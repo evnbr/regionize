@@ -92,26 +92,26 @@ const flowIntoRegions = async (opts: FlowOptions) => {
 
   const addSplittableTextNode = async (textNode: Text) => {
     const el = currentRegion.currentElement;
-    let hasAdded = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
-    if (!hasAdded && currentRegion.path.length > 1) {
+    let result = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
+    if (!result.completed && currentRegion.path.length > 1) {
       // retry 1
       tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-      hasAdded = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
+      result = await addTextNodeAcrossParents(textNode, el, continuedParent, hasOverflowed);
     }
-    if (!hasAdded) {
+    if (!result.completed) {
       // retry 2
       addTextWithoutChecks(textNode, currentRegion.currentElement);
     }
   };
 
   const addWholeTextNode = async (textNode: Text) => {
-    let hasAdded = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
-    if (!hasAdded && !ignoreCurrentOverflow()) {
+    let result = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
+    if (!result.completed && !ignoreCurrentOverflow()) {
       // retry 1
       tryInNextRegion(currentRegion, continueInNextRegion, canSplit);
-      hasAdded = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
+      result = await addTextNode(textNode, currentRegion.currentElement, hasOverflowed);
     }
-    if (!hasAdded) {
+    if (!result.completed) {
       // retry 2
       addTextWithoutChecks(textNode, currentRegion.currentElement);
     }
@@ -135,9 +135,8 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     currentRegion.path.push(element);
 
     if (canSkipTraversal(element)) {
-      // console.log('maybe short circuit');
       if (!hasOverflowed()) {
-        // console.log('did short circuit');
+        // Short circuit
         return currentRegion.path.pop()!;
       }
     }

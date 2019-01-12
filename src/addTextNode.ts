@@ -1,22 +1,40 @@
 import { yieldIfNecessary } from './schedule';
 import ignoreOverflow from './ignoreOverflow';
 import { isTextNode } from './typeGuards';
+import { LayoutResult } from './types';
 
-const createTextNode = (document.createTextNode).bind(document);
+const createTextNode: (text: string) => Text = (document.createTextNode).bind(document);
 
 type Checker = () => boolean;
 type ElementGetter = () => HTMLElement;
-type AddTextResult = Promise<(boolean | Text)>;
+// type AddTextResult = Promise<(boolean | Text)>;
 
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
-const addTextNode = async (textNode: Text, parent: HTMLElement, hasOverflowed: Checker): AddTextResult => {
+const addTextNode = async (
+  textNode: Text,
+  parent: HTMLElement,
+  hasOverflowed: Checker
+): Promise<LayoutResult> => {
   parent.appendChild(textNode);
   const success = !hasOverflowed();
   if (!success) parent.removeChild(textNode);
   await yieldIfNecessary();
-  return success;
+  return { completed: success };
 };
+
+const nextNonSpaceIndex = (text: string, startIndex: number): number => {
+  let newIndex = startIndex + 1;
+  while (newIndex < text.length && text.charAt(newIndex) !== ' ') newIndex += 1;
+  return newIndex;
+}
+
+const previousNonSpaceIndex = (text: string, startIndex: number): number => {
+  let newIndex = startIndex;
+  if (text.charAt(newIndex) === ' ') newIndex -= 1;
+  while (text.charAt(newIndex) !== ' ' && newIndex > 0) newIndex -= 1;
+  return newIndex;
+}
 
 
 // Try adding a text node by incrementally adding words
@@ -24,59 +42,67 @@ const addTextNode = async (textNode: Text, parent: HTMLElement, hasOverflowed: C
 //
 // Returns true if all the text fits, false if none fits,
 // or new textnode containing the remainder text.
-const addTextNodeUntilOverflow = async (textNode: Text, parent: HTMLElement, hasOverflowed: Checker): AddTextResult => {
+const addTextNodeUntilOverflow = async (
+  textNode: Text,
+  parent: HTMLElement,
+  hasOverflowed: Checker
+): Promise<LayoutResult> => {
   const originalText = textNode.nodeValue || "";
   parent.appendChild(textNode);
 
   if (!hasOverflowed() || ignoreOverflow(parent)) {
-    return true;
+    return { completed: true };
   }
 
   // Add letter by letter until overflow
-  let pos = 0;
-  textNode.nodeValue = originalText.substr(0, pos);
+  let idx = 0;
+  textNode.nodeValue = originalText.substr(0, idx);
 
-  while (!hasOverflowed() && pos < originalText.length) {
-    // advance to next non-space character
-    pos += 1;
-    while (pos < originalText.length && originalText.charAt(pos) !== ' ') pos += 1;
+  while (!hasOverflowed() && idx < originalText.length) {
+    idx = nextNonSpaceIndex(originalText, idx)
 
-    if (pos < originalText.length) {
+    if (idx < originalText.length) {
       // reveal more text
-      textNode.nodeValue = originalText.substr(0, pos);
+      textNode.nodeValue = originalText.substr(0, idx);
       await yieldIfNecessary();
     }
   }
 
   // Back out to word boundary
-  if (originalText.charAt(pos) === ' ') pos -= 1; // TODO: redundant
-  while (originalText.charAt(pos) !== ' ' && pos > 0) pos -= 1;
+  idx = previousNonSpaceIndex(originalText, idx);
 
-  if (pos < 1) {
+  if (idx < 1) {
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     parent.removeChild(textNode);
-    return false; // TODO
+    return { completed: false };
   }
 
   // trim text to word
-  const fittingText = originalText.substr(0, pos);
-  const overflowingText = originalText.substr(pos);
+  const fittingText = originalText.substr(0, idx);
+  const overflowingText = originalText.substr(idx);
   textNode.nodeValue = fittingText;
 
   // Create a new text node for the next flow box
-  const remainingTextNode = createTextNode(overflowingText);
-  return remainingTextNode;
+  return {
+    completed: true,
+    remainder: createTextNode(overflowingText)
+  };
 };
 
 
 // Fills text across multiple elements by requesting a continuation
 // once the current element overflows
-const addTextNodeAcrossParents = async (textNode: Text, parent: HTMLElement, nextParent: ElementGetter, hasOverflowed: Checker): AddTextResult => {
+const addTextNodeAcrossParents = async (
+  textNode: Text,
+  parent: HTMLElement,
+  nextParent: ElementGetter,
+  hasOverflowed: Checker
+): Promise<LayoutResult> => {
   const result = await addTextNodeUntilOverflow(textNode, parent, hasOverflowed);
-  if (isTextNode(result as Node)) {
+  if (result.remainder) {
     const nextElement = nextParent();
-    return addTextNodeAcrossParents(result as Text, nextElement, nextParent, hasOverflowed);
+    return addTextNodeAcrossParents(result.remainder, nextElement, nextParent, hasOverflowed);
   }
   return result;
 };
