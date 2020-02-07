@@ -1,11 +1,17 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "./dist",
+    "declarationDir": "./dist/types",
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "outDir": "dist",
+    "outDir": "./build",
     "strict": true,
     "target": "es2018",
-  }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/__tests__"
+  ]
 }
