@@ -29,7 +29,7 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
-      typescript(),
+      typescript({ useTsconfigDeclarationDir: true }),
     ],
   }),
 
@@ -75,7 +75,7 @@ export default [
     }),
     plugins: [
       resolve(),
-      typescript(),
+      typescript({ useTsconfigDeclarationDir: true }),
     ],
   }),
 ];

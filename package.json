@@ -6,6 +6,7 @@
   "module": "dist/regionize.esm.js",
   "browser": "dist/regionize.umd.js",
   "unpkg": "dist/regionize.min.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
