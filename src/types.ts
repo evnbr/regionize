@@ -6,10 +6,9 @@ export type ElementGetter = () => HTMLElement;
 
 export type RegionGetter = () => Region;
 
-export type RuleApplier = (
-    original: HTMLElement,
-    clone: HTMLElement,
-    nextChild?: HTMLElement,
-    cloner?: ElementCloner
+export type SplitRuleApplier = (
+  original: HTMLElement,
+  clone: HTMLElement,
+  nextChild?: HTMLElement,
+  cloner?: ElementCloner,
 ) => void;
-  

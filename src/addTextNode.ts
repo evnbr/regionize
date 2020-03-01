@@ -6,19 +6,21 @@ import { nextWordEnd, previousWordEnd } from './stringUtils';
 type Checker = () => boolean;
 
 export type TextLayoutResult = {
-  completed: boolean,
-  remainder?: Text,
-  waitTime?: number,
-}
+  completed: boolean;
+  remainder?: Text;
+  waitTime?: number;
+};
 
-const createTextNode: (text: string) => Text = (document.createTextNode).bind(document);
+const createTextNode: (text: string) => Text = document.createTextNode.bind(
+  document,
+);
 
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
 const addInOneGo = async (
   textNode: Text,
   container: HTMLElement,
-  hasOverflowed: Checker
+  hasOverflowed: Checker,
 ): Promise<TextLayoutResult> => {
   container.appendChild(textNode);
   const success = !hasOverflowed();
@@ -32,7 +34,7 @@ const addInOneGo = async (
 const fillWordsUntilOverflow = async (
   textNode: Text,
   container: HTMLElement,
-  hasOverflowed: Checker
+  hasOverflowed: Checker,
 ): Promise<TextLayoutResult> => {
   const originalText = textNode.nodeValue || '';
   container.appendChild(textNode);
@@ -48,7 +50,7 @@ const fillWordsUntilOverflow = async (
 
   while (!hasOverflowed() && proposedEnd < originalText.length) {
     // Reveal the next word
-    proposedEnd = nextWordEnd(originalText, proposedEnd)
+    proposedEnd = nextWordEnd(originalText, proposedEnd);
 
     if (proposedEnd < originalText.length) {
       textNode.nodeValue = originalText.substr(0, proposedEnd);
@@ -74,10 +76,9 @@ const fillWordsUntilOverflow = async (
   // Create a new text node for the next flow box
   return {
     completed: true,
-    remainder: createTextNode(overflowingText)
+    remainder: createTextNode(overflowingText),
   };
 };
-
 
 // Fills text across multiple elements by requesting a continuation
 // once the current element overflows
@@ -85,9 +86,13 @@ const fillWords = async (
   textNode: Text,
   container: HTMLElement,
   getNextContainer: ElementGetter,
-  hasOverflowed: Checker
+  hasOverflowed: Checker,
 ): Promise<TextLayoutResult> => {
-  const textLayout = await fillWordsUntilOverflow(textNode, container, hasOverflowed);
+  const textLayout = await fillWordsUntilOverflow(
+    textNode,
+    container,
+    hasOverflowed,
+  );
 
   if (textLayout.remainder) {
     const nextContainer = getNextContainer();
@@ -95,7 +100,7 @@ const fillWords = async (
       textLayout.remainder,
       nextContainer,
       getNextContainer,
-      hasOverflowed
+      hasOverflowed,
     );
   }
 
@@ -105,5 +110,5 @@ const fillWords = async (
 export {
   addInOneGo as addTextNode,
   fillWords as addSplittableText,
-  fillWordsUntilOverflow
+  fillWordsUntilOverflow,
 };

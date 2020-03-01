@@ -38,13 +38,16 @@ class Region {
 
   get isReasonableSize(): boolean {
     const box = this.element.getBoundingClientRect();
-    return (box.height > 100) && (box.width > 100); // TODO: Number is arbitrary
+    return box.height > 100 && box.width > 100; // TODO: Number is arbitrary
   }
 
   overflowAmount(): number {
     const contentH = this.content.offsetHeight;
     const boxH = this.element.offsetHeight;
-    if (boxH === 0) throw Error('Regionizer: Trying to flow into an element with zero height.');
+    if (boxH === 0)
+      throw Error(
+        'Regionizer: Trying to flow into an element with zero height.',
+      );
     return contentH - boxH;
   }
 

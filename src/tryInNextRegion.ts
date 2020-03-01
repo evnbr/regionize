@@ -7,7 +7,11 @@
 import Region from './Region';
 import { RegionGetter, ElementChecker } from './types';
 
-const tryInNextRegion = (region: Region, makeNextRegion: RegionGetter, canSplit: ElementChecker) => {
+const tryInNextRegion = (
+  region: Region,
+  makeNextRegion: RegionGetter,
+  canSplit: ElementChecker,
+) => {
   if (region.path.length <= 1) {
     throw Error('Regionize: Attempting to move the top-level element');
   }
@@ -33,7 +37,10 @@ const tryInNextRegion = (region: Region, makeNextRegion: RegionGetter, canSplit:
 
   // If the nearest ancestor would be empty without this node,
   // move it to the next page too.
-  if (region.path.length > 1 && region.currentElement.textContent!.trim() === '') {
+  if (
+    region.path.length > 1 &&
+    region.currentElement.textContent!.trim() === ''
+  ) {
     parent!.appendChild(nearestMoveableElement);
     nearestMoveableElement = region.path.pop()!;
     pathToRestore.unshift(nearestMoveableElement);
@@ -63,7 +70,9 @@ const tryInNextRegion = (region: Region, makeNextRegion: RegionGetter, canSplit:
   nextRegion.path.push(elementToMove);
 
   if (startLength !== nextRegion.path.length) {
-    throw Error('Regionize: Restored path depth does not match original path depth');
+    throw Error(
+      'Regionize: Restored path depth does not match original path depth',
+    );
   }
 };
 

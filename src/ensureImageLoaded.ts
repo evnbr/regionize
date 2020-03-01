@@ -4,14 +4,19 @@
 // Note: Doesn't ever reject, since missing images
 // shouldn't prevent layout from resolving
 
-const wait10 = (): Promise<void> => new Promise((resolve) => {
-  setTimeout(() => { resolve(); }, 10);
-});
+const wait10 = (): Promise<void> =>
+  new Promise(resolve => {
+    setTimeout(() => {
+      resolve();
+    }, 10);
+  });
 
 const ensureImageLoaded = async (image: HTMLImageElement): Promise<number> => {
   const imgStart = performance.now();
   let failed = false;
-  image.addEventListener('error', () => { failed = true; });
+  image.addEventListener('error', () => {
+    failed = true;
+  });
   image.src = image.src; // re-trigger error if already failed
 
   while (!image.naturalWidth && !failed) {

@@ -6,7 +6,7 @@ const nextWordEnd = (text: string, startIndex: number): number => {
     newIndex += 1;
   }
   return newIndex;
-}
+};
 
 const previousWordEnd = (text: string, startIndex: number): number => {
   let newIndex = startIndex;
@@ -17,6 +17,6 @@ const previousWordEnd = (text: string, startIndex: number): number => {
     newIndex -= 1;
   }
   return newIndex;
-}
+};
 
 export { nextWordEnd, previousWordEnd };

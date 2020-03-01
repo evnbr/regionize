@@ -1,8 +1,9 @@
 const MAX_TIME = 30; // ms
 
-const rAF = (): Promise<number> => new Promise((resolve) => {
-  requestAnimationFrame(t => resolve(t));
-});
+const rAF = (): Promise<number> =>
+  new Promise(resolve => {
+    requestAnimationFrame(t => resolve(t));
+  });
 
 let lastYieldTime = 0;
 

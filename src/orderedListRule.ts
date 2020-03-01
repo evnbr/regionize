@@ -7,7 +7,7 @@ const preserveNumbering = (
   let prevStart = 1;
   if (original.hasAttribute('start')) {
     // the OL is also a continuation
-    prevStart = parseInt(original.getAttribute('start') || "", 10);
+    prevStart = parseInt(original.getAttribute('start') || '', 10);
   }
   if (nextChild && nextChild.tagName === 'LI') {
     // the first list item is a continuation

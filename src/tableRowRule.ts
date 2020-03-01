@@ -4,9 +4,8 @@ const preserveTableColumns = (
   original: HTMLElement,
   clone: HTMLElement,
   nextChild: HTMLElement,
-  deepClone: ElementCloner
+  deepClone: ElementCloner,
 ): void => {
-
   const columns = [...original.children] as HTMLElement[];
 
   const currentIndex = columns.indexOf(nextChild);
@@ -14,9 +13,9 @@ const preserveTableColumns = (
     const origCol = columns[i];
     if (origCol) {
       const clonedCol = deepClone(origCol);
-      clone.appendChild(clonedCol);  
+      clone.appendChild(clonedCol);
     }
-  }  
+  }
 };
 
 export default preserveTableColumns;
