@@ -3,15 +3,12 @@
     "declaration": true,
     "declarationDir": "./dist/types",
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "noImplicitAny": true,
     "outDir": "./build",
     "strict": true,
-    "target": "es2018",
+    "target": "es2018"
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "src/__tests__"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["src/__tests__", "node_modules"]
 }
