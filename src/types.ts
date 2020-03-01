@@ -6,6 +6,11 @@ export type ElementGetter = () => HTMLElement;
 
 export type RegionGetter = () => Region;
 
+export type AsyncRuleApplier = (
+  el: HTMLElement,
+  next: RegionGetter,
+) => Promise<null> | null;
+
 export type SplitRuleApplier = (
   original: HTMLElement,
   clone: HTMLElement,

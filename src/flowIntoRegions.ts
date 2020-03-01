@@ -3,6 +3,7 @@ import {
   ElementChecker,
   SplitRuleApplier,
   RegionGetter,
+  AsyncRuleApplier,
 } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 
@@ -19,16 +20,14 @@ import orderedListRule from './orderedListRule';
 import tableRowRule from './tableRowRule';
 import Region from './Region';
 
-type AddElementResult = Promise<HTMLElement>;
-
 interface FlowOptions {
   content: HTMLElement;
   createRegion: RegionGetter;
   applySplit?: SplitRuleApplier;
   canSplit?: ElementChecker;
   shouldTraverse?: ElementChecker;
-  beforeAdd?: (el: HTMLElement, next: RegionGetter) => void;
-  afterAdd?: (el: HTMLElement, next: RegionGetter) => void;
+  beforeAdd?: AsyncRuleApplier;
+  afterAdd?: AsyncRuleApplier;
   didWaitFor?: (t: number) => void;
 }
 
@@ -153,7 +152,8 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     }
 
     // Transforms before adding
-    beforeAdd(element, continueInNextRegion);
+    const beforeAddWork = beforeAdd(element, continueInNextRegion);
+    if (beforeAddWork) await beforeAddWork;
 
     // Append element and push onto the the stack
     currentRegion.currentElement.appendChild(element);
@@ -167,7 +167,8 @@ const flowIntoRegions = async (opts: FlowOptions) => {
 
     // We're done: Pop off the stack and do any cleanup
     const addedElement = currentRegion.path.pop()!;
-    afterAdd(addedElement, continueInNextRegion);
+    const afterAddWork = afterAdd(addedElement, continueInNextRegion);
+    if (afterAddWork) await afterAddWork;
   };
 
   const clearAndAddChildren = async (element: HTMLElement) => {
