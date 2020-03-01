@@ -9,7 +9,7 @@ export type RegionGetter = () => Region;
 export type AsyncRuleApplier = (
   el: HTMLElement,
   next: RegionGetter,
-) => Promise<null> | null;
+) => Promise<any> | undefined;
 
 export type SplitRuleApplier = (
   original: HTMLElement,

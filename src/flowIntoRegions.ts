@@ -152,8 +152,7 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     }
 
     // Transforms before adding
-    const beforeAddWork = beforeAdd(element, continueInNextRegion);
-    if (beforeAddWork) await beforeAddWork;
+    await beforeAdd(element, continueInNextRegion);
 
     // Append element and push onto the the stack
     currentRegion.currentElement.appendChild(element);
@@ -167,8 +166,7 @@ const flowIntoRegions = async (opts: FlowOptions) => {
 
     // We're done: Pop off the stack and do any cleanup
     const addedElement = currentRegion.path.pop()!;
-    const afterAddWork = afterAdd(addedElement, continueInNextRegion);
-    if (afterAddWork) await afterAddWork;
+    await afterAdd(addedElement, continueInNextRegion);
   };
 
   const clearAndAddChildren = async (element: HTMLElement) => {
