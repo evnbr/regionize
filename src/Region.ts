@@ -13,7 +13,6 @@ class Region {
   constructor(el: HTMLElement) {
     this.element = el;
     this.content = div('region-content');
-    this.content.style.padding = '0.1px';
     this.content.style.position = 'relative';
     this.element.appendChild(this.content);
     this.path = [];
@@ -24,19 +23,19 @@ class Region {
     if (newPath.length > 0) this.content.appendChild(newPath[0]);
   }
 
-  get currentElement(): HTMLElement {
+  currentElement(): HTMLElement {
     const len = this.path.length;
     if (len > 0) return this.path[len - 1];
     return this.content;
   }
 
-  get isEmpty(): boolean {
+  isEmpty(): boolean {
     const el: HTMLElement = this.content;
     if (el.textContent === null) return true;
-    return el.textContent.trim() === '' && el.offsetHeight < 1;
+    return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
 
-  get isReasonableSize(): boolean {
+  isReasonableSize(): boolean {
     const box = this.element.getBoundingClientRect();
     return box.height > 100 && box.width > 100; // TODO: Number is arbitrary
   }
