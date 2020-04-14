@@ -2,11 +2,12 @@ import Region from '../Region';
 
 const setMockHeight = (el: HTMLElement, fakeHeight: number) => {
   Object.defineProperty(el, 'offsetHeight', {
-    get: jest.fn(() => { return fakeHeight; }),
+    get: jest.fn(() => {
+      return fakeHeight;
+    }),
     configurable: true,
-  });  
-}
-
+  });
+};
 
 test('Region addes a content element', () => {
   const div = document.createElement('div');
@@ -21,11 +22,11 @@ test('Region isEmpty works', () => {
   const textNode = document.createTextNode('content');
   const region = new Region(div);
 
-  expect(region.isEmpty).toBe(true);
+  expect(region.isEmpty()).toBe(true);
 
   region.currentElement.appendChild(textNode);
 
-  expect(region.isEmpty).toBe(false);
+  expect(region.isEmpty()).toBe(false);
 });
 
 test('Region isReasonableSize works', () => {
@@ -35,18 +36,18 @@ test('Region isReasonableSize works', () => {
   Element.prototype.getBoundingClientRect = jest.fn(() => {
     return { width: 20, height: 20 };
   });
-  expect(region.isReasonableSize).toBe(false);
+  expect(region.isReasonableSize()).toBe(false);
 
   Element.prototype.getBoundingClientRect = jest.fn(() => {
     return { width: 120, height: 120 };
   });
-  expect(region.isReasonableSize).toBe(true);
+  expect(region.isReasonableSize()).toBe(true);
 });
 
 test('Region hasOverflowed works', () => {
   const div = document.createElement('div');
   const region = new Region(div);
-  
+
   setMockHeight(div, 100);
 
   setMockHeight(region.content, 20);

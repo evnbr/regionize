@@ -48,7 +48,7 @@ const tryInNextRegion = (
   }
 
   let nextRegion: Region;
-  if (!region.isEmpty) {
+  if (!region.isEmpty()) {
     if (region.hasOverflowed()) {
       // Recovery failed, maybe the box contains a large
       // unsplittable element.

@@ -2,10 +2,12 @@ import { RegionGetter } from '../types';
 import flowIntoRegions from '../flowIntoRegions';
 
 let time = 0;
-(global as any).performance = { now: () => {
-  time += 1;
-  return time;
-} };
+(global as any).performance = {
+  now: () => {
+    time += 1;
+    return time;
+  },
+};
 
 const mockDoc = document;
 const mockEl = (name = 'div') => mockDoc.createElement(name);
@@ -13,9 +15,11 @@ let mockOverflow = (el: HTMLElement) => {
   return el.textContent!.length > 10;
 };
 
-const allText = (regions: any) => regions
-  .map((region: any) => region.content.textContent)
-  .join('').replace(/\s+/g, '');
+const allText = (regions: any) =>
+  regions
+    .map((region: any) => region.content.textContent)
+    .join('')
+    .replace(/\s+/g, '');
 
 const MockRegion = () => {
   const element = mockEl();
@@ -29,12 +33,15 @@ const MockRegion = () => {
     element,
     content,
     get currentElement() {
-      return instance.path.length < 1 ? content : instance.path[instance.path.length - 1];
+      return instance.path.length < 1
+        ? content
+        : instance.path[instance.path.length - 1];
     },
     setPath: (newPath: HTMLElement[]) => {
       instance.path = newPath;
       if (newPath.length > 0) content.appendChild(newPath[0]);
     },
+    isEmpty: () => false,
     hasOverflowed,
     isReasonableSize: true,
   };
@@ -61,7 +68,7 @@ test('Preserves content order (10char overflow)', async () => {
   mockOverflow = el => el.textContent!.length > 10;
   await flowIntoRegions({
     content: a,
-    createRegion: (createRegion as any as RegionGetter)
+    createRegion: (createRegion as any) as RegionGetter,
   });
 
   expect(regions.length).toBe(3);
@@ -82,13 +89,18 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   mockOverflow = el => el.textContent!.length > 10;
   await flowIntoRegions({
     content,
-    createRegion: (createRegion as any as RegionGetter)
+    createRegion: (createRegion as any) as RegionGetter,
   });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
-  expect(regions.map(region => region.hasOverflowed()))
-    .toEqual([false, false, false, false, false]);
+  expect(regions.map(region => region.hasOverflowed())).toEqual([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
 });
 
 test('Split elements over many pages (100char overflow)', async () => {
@@ -112,13 +124,14 @@ test('Split elements over many pages (100char overflow)', async () => {
   mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions({
     content,
-    createRegion: (createRegion as any as RegionGetter)
+    createRegion: (createRegion as any) as RegionGetter,
   });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
-  expect(regions.map(region => region.element.textContent.length > 100))
-    .toEqual([false, false, false]);
+  expect(
+    regions.map(region => region.element.textContent.length > 100),
+  ).toEqual([false, false, false]);
 });
 //
 test('Split elements over many pages (5children overflow)', async () => {
@@ -139,13 +152,13 @@ test('Split elements over many pages (5children overflow)', async () => {
     return r;
   };
 
-  mockOverflow = (el) => {
+  mockOverflow = el => {
     const count = (el.querySelectorAll('*') || []).length;
     return count > 5;
   };
   await flowIntoRegions({
     content,
-    createRegion: (createRegion as any as RegionGetter)
+    createRegion: (createRegion as any) as RegionGetter,
   });
 
   expect(regions.length).toBe(5);
@@ -174,8 +187,8 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions({
     content,
-    createRegion: (createRegion as any as RegionGetter),
-    canSplit
+    createRegion: (createRegion as any) as RegionGetter,
+    canSplit,
   });
   expect(regions.length).toBe(3);
 
@@ -185,27 +198,36 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   expect(endParagraphCount).toBe(20);
 
   expect(allText(regions)).toBe(expectedText);
-  expect(regions.map(region => region.element.textContent.length > 100))
-    .toEqual([false, false, false]);
+  expect(
+    regions.map(region => region.element.textContent.length > 100),
+  ).toEqual([false, false, false]);
 });
 
 test('Throws Errors when missing required parameters', async () => {
-  expect((async () => {
-    await flowIntoRegions({} as any);
-  })()).rejects.toThrow();
+  expect(
+    (async () => {
+      await flowIntoRegions({} as any);
+    })(),
+  ).rejects.toThrow();
 
-  expect((async () => {
-    await flowIntoRegions({ content: true } as any);
-  })()).rejects.toThrow();
+  expect(
+    (async () => {
+      await flowIntoRegions({ content: true } as any);
+    })(),
+  ).rejects.toThrow();
 
-  expect((async () => {
-    await flowIntoRegions({ createRegion: () => false, } as any);
-  })()).rejects.toThrow();
+  expect(
+    (async () => {
+      await flowIntoRegions({ createRegion: () => false } as any);
+    })(),
+  ).rejects.toThrow();
 
-  expect((async () => {
-    await flowIntoRegions({
-      content: document.createElement('div'),
-      createRegion: () => MockRegion(),
-    } as any);
-  })()).resolves.not.toThrow();
+  expect(
+    (async () => {
+      await flowIntoRegions({
+        content: document.createElement('div'),
+        createRegion: () => MockRegion(),
+      } as any);
+    })(),
+  ).resolves.not.toThrow();
 });
