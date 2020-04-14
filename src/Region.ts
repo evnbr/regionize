@@ -23,7 +23,7 @@ class Region {
     if (newPath.length > 0) this.content.appendChild(newPath[0]);
   }
 
-  currentElement(): HTMLElement {
+  get currentElement(): HTMLElement {
     const len = this.path.length;
     if (len > 0) return this.path[len - 1];
     return this.content;

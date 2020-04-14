@@ -30,7 +30,7 @@ const tryInNextRegion = (
 
   // Once a node is moved to a new page, it should no longer trigger another
   // move. otherwise tall elements will endlessly get shifted to the next page
-  nearestMoveableElement.setAttribute('data-bindery-did-move', 'true');
+  nearestMoveableElement.setAttribute('data-regionize-did-move', 'true');
 
   const parent = nearestMoveableElement.parentNode;
   parent!.removeChild(nearestMoveableElement);
