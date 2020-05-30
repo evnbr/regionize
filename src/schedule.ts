@@ -1,4 +1,4 @@
-const MAX_TIME = 30; // ms
+const maxWorkTimePerFrame = 30; // ms
 
 const rAF = (): Promise<number> =>
   new Promise(resolve => {
@@ -9,7 +9,7 @@ let lastYieldTime = 0;
 
 const shouldYield = (): boolean => {
   const timeSinceYield = performance.now() - lastYieldTime;
-  return timeSinceYield > MAX_TIME;
+  return timeSinceYield > maxWorkTimePerFrame;
 };
 
 const yieldIfNecessary = async (): Promise<void> => {

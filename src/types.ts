@@ -17,3 +17,21 @@ export type SplitRuleApplier = (
   nextChild?: HTMLElement,
   cloner?: ElementCloner,
 ) => void;
+
+export interface FlowProgressEvent {
+  state: 'inProgress' | 'imageLoading' | 'done';
+  estimatedProgress: number;
+  imageName?: string;
+  imageWaitTime?: number;
+}
+
+export interface FlowOptions {
+  content: HTMLElement;
+  createRegion: RegionGetter;
+  applySplit?: SplitRuleApplier;
+  canSplit?: ElementChecker;
+  shouldTraverse?: ElementChecker;
+  beforeAdd?: AsyncRuleApplier;
+  afterAdd?: AsyncRuleApplier;
+  onProgress?: (e: FlowProgressEvent) => void;
+}

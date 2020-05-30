@@ -1,10 +1,4 @@
-import {
-  ElementCloner,
-  ElementChecker,
-  SplitRuleApplier,
-  RegionGetter,
-  AsyncRuleApplier,
-} from './types';
+import { ElementCloner, FlowOptions } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 
 import {
@@ -18,42 +12,35 @@ import clonePath from './clonePath';
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
 import tableRowRule from './tableRowRule';
+import ProgressEstimator from './ProgressEstimator';
 import Region from './Region';
-
-interface FlowOptions {
-  content: HTMLElement;
-  createRegion: RegionGetter;
-  applySplit?: SplitRuleApplier;
-  canSplit?: ElementChecker;
-  shouldTraverse?: ElementChecker;
-  beforeAdd?: AsyncRuleApplier;
-  afterAdd?: AsyncRuleApplier;
-  didWaitFor?: (t: number) => void;
-}
 
 const noop = () => {};
 const always = () => true;
 const never = () => false;
 
-// flow content through FlowBoxes.
-// the caller is responsible for managing
-// and creating regions.
-const flowIntoRegions = async (opts: FlowOptions) => {
-  const content = opts.content;
-  const createRegion = opts.createRegion;
+// flow content through Regions.
+// the caller is responsible for creating each region and maintaining
+// a list of references to each one, nothing is returned
+const flowIntoRegions = async ({
+  content,
+  createRegion,
+  applySplit = noop,
+  canSplit = always,
+  beforeAdd = async () => noop(),
+  afterAdd = async () => noop(),
+  shouldTraverse = never,
+  onProgress: emitProgress = noop,
+}: FlowOptions) => {
   if (!content) throw Error('content not specified');
   if (!createRegion) throw Error('createRegion not specified');
 
-  // optional
-  const applySplit = opts.applySplit ?? noop;
-  const canSplit = opts.canSplit ?? always;
-  const beforeAdd = opts.beforeAdd ?? noop;
-  const afterAdd = opts.afterAdd ?? noop;
-  const didWaitFor = opts.didWaitFor ?? noop;
-  const shouldTraverse = opts.shouldTraverse ?? never;
+  // estimate
+  const estimator = new ProgressEstimator(content.querySelectorAll('*').length);
 
   // currentRegion should hold the only state that persists during traversal.
   let currentRegion = createRegion();
+
   const hasOverflowed = () => currentRegion.hasOverflowed();
   const canSplitCurrent = () => canSplit(currentRegion.currentElement);
   const ignoreCurrentOverflow = () =>
@@ -147,8 +134,16 @@ const flowIntoRegions = async (opts: FlowOptions) => {
   const addElement = async (element: HTMLElement): Promise<void> => {
     // Ensure images are loaded before testing for overflow
     if (isUnloadedImage(element)) {
+      emitProgress({
+        state: 'imageLoading',
+        estimatedProgress: estimator.percentComplete,
+      });
       const waitTime = await ensureImageLoaded(element);
-      didWaitFor(waitTime);
+      estimator.addWaitTime(waitTime);
+      emitProgress({
+        state: 'inProgress',
+        estimatedProgress: estimator.percentComplete,
+      });
     }
 
     // Transforms before adding
@@ -167,6 +162,11 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     // We're done: Pop off the stack and do any cleanup
     const addedElement = currentRegion.path.pop()!;
     await afterAdd(addedElement, continueInNextRegion);
+    estimator.increment();
+    emitProgress({
+      state: 'inProgress',
+      estimatedProgress: estimator.percentComplete,
+    });
   };
 
   const clearAndAddChildren = async (element: HTMLElement) => {
@@ -191,7 +191,9 @@ const flowIntoRegions = async (opts: FlowOptions) => {
     }
   };
 
-  return addElement(content);
+  await addElement(content);
+
+  emitProgress({ state: 'done', estimatedProgress: 1 });
 };
 
 export default flowIntoRegions;
