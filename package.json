@@ -1,6 +1,6 @@
 {
   "name": "regionize",
-  "version": "0.1.7",
+  "version": "1.0.0",
   "description": "Flow HTML through multiple regions",
   "main": "dist/regionize.cjs.js",
   "module": "dist/regionize.esm.js",
@@ -30,11 +30,11 @@
     "eslint-plugin-import": "^2.22.1",
     "jest": "^25.5.4",
     "prettier": "^1.19.1",
-    "rollup": "^0.59.2",
+    "rollup": "^2.16.1",
     "rollup-plugin-babel": "^3.0.7",
-    "rollup-plugin-babel-minify": "^5.0.0",
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-terser": "^6.1.0",
     "tslib": "^1.14.1",
     "typescript": "^3.9.7"
   },

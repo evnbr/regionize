@@ -1,10 +1,9 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
-import minify from 'rollup-plugin-babel-minify';
+import { terser } from 'rollup-plugin-terser';
 import babel from 'rollup-plugin-babel';
 
 import pkg from './package.json';
-
 
 const extend = (a, b) => Object.assign({}, a, b);
 
@@ -25,11 +24,7 @@ export default [
       format: 'umd',
       sourcemap: true,
     }),
-    plugins: [
-      resolve(),
-      commonjs(),
-      // typescript({ useTsconfigDeclarationDir: true }),
-    ],
+    plugins: [resolve(), commonjs()],
   }),
 
   // minified browser-friendly build
@@ -42,9 +37,10 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
-      // typescript(),
-      minify({
-        comments: false,
+      terser({
+        mangle: {
+          properties: { keep_quoted: true },
+        },
       }),
     ],
   }),
@@ -58,7 +54,6 @@ export default [
     plugins: [
       resolve(),
       commonjs(),
-      // typescript(),
       babel({
         runtimeHelpers: true,
         exclude: 'node_modules/**',
@@ -72,9 +67,6 @@ export default [
       file: pkg.module,
       format: 'es',
     }),
-    plugins: [
-      resolve(),
-      // typescript({ useTsconfigDeclarationDir: true }),
-    ],
+    plugins: [resolve()],
   }),
 ];
