@@ -2,7 +2,6 @@ import {
   FlowOptions,
   FlowCallbacks,
   AddedStatus,
-  TextAttemptResult,
   AddAttemptResult,
 } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
@@ -283,7 +282,7 @@ const addUntilOverflow = async (
   content: HTMLElement,
   region: Region,
   opts: FlowOptions,
-): Promise<AddAttemptResult> => {
+): Promise<AddAttemptResult<HTMLElement>> => {
   if (!content) throw Error('content not specified');
 
   const flowManager = new RegionFlowManager(opts);

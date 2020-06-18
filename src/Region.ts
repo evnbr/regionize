@@ -1,5 +1,3 @@
-import { threadId } from 'worker_threads';
-
 const div = (cls: string): HTMLElement => {
   const el = document.createElement('div');
   el.classList.add(cls);
@@ -11,7 +9,6 @@ class Region {
   private contentWrap: HTMLElement;
   previousRegion?: Region;
   nextRegion?: Region;
-  suppressErrors: boolean = false;
 
   constructor(el: HTMLElement) {
     this.element = el;
