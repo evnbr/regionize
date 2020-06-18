@@ -27,20 +27,11 @@ const MockRegion = () => {
   element.classList.add('box');
   content.classList.add('content');
   const hasOverflowed = () => mockOverflow(content);
-  const path: HTMLElement[] = [];
+  const append = nodes => content.append(nodes);
   const instance = {
-    path,
+    append,
     element,
     content,
-    get currentElement() {
-      return instance.path.length < 1
-        ? content
-        : instance.path[instance.path.length - 1];
-    },
-    setPath: (newPath: HTMLElement[]) => {
-      instance.path = newPath;
-      if (newPath.length > 0) content.appendChild(newPath[0]);
-    },
     isEmpty: () => false,
     hasOverflowed,
     isReasonableSize: true,

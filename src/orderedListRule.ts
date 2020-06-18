@@ -6,7 +6,7 @@ const preserveNumbering = (
   // restart numbering
   let prevStart = 1;
   if (original.hasAttribute('start')) {
-    // the OL is also a continuation
+    // the OL doesn't start from 0 either
     prevStart = parseInt(original.getAttribute('start') || '', 10);
   }
   if (nextChild && nextChild.tagName === 'LI') {

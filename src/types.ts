@@ -6,6 +6,17 @@ export type ElementGetter = () => HTMLElement;
 
 export type RegionGetter = () => Region;
 
+export enum AddedStatus {
+  ALL = 'all',
+  PARTIAL = 'partial',
+  NONE = 'none',
+}
+
+export type AddAttemptResult<T> = {
+  status: AddedStatus;
+  remainder?: T;
+};
+
 export type AsyncRuleApplier = (
   el: HTMLElement,
   next: RegionGetter,
@@ -34,4 +45,14 @@ export interface FlowOptions {
   beforeAdd?: AsyncRuleApplier;
   afterAdd?: AsyncRuleApplier;
   onProgress?: (e: FlowProgressEvent) => void;
+}
+
+export interface FlowCallbacks {
+  createRegion: RegionGetter;
+  applySplit: SplitRuleApplier;
+  canSplit: ElementChecker;
+  shouldTraverse: ElementChecker;
+  beforeAdd: AsyncRuleApplier;
+  afterAdd: AsyncRuleApplier;
+  onProgress: (e: FlowProgressEvent) => void;
 }

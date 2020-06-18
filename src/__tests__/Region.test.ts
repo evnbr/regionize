@@ -9,14 +9,6 @@ const setMockHeight = (el: HTMLElement, fakeHeight: number) => {
   });
 };
 
-test('Region addes a content element', () => {
-  const div = document.createElement('div');
-  const region = new Region(div);
-
-  expect(region.element).toBe(div);
-  expect(region.content).toBe(div.firstElementChild);
-});
-
 test('Region isEmpty works', () => {
   const div = document.createElement('div');
   const textNode = document.createTextNode('content');
@@ -24,7 +16,7 @@ test('Region isEmpty works', () => {
 
   expect(region.isEmpty()).toBe(true);
 
-  region.currentElement.appendChild(textNode);
+  region.append(textNode);
 
   expect(region.isEmpty()).toBe(false);
 });

@@ -1,4 +1,5 @@
-import { addTextNode, fillWordsUntilOverflow, addSplittableText } from '../addTextNode';
+import { addTextNodeWithoutSplit, addTextUntilOverflow } from '../addTextNode';
+import { ContentAdded } from '../types';
 
 (global as any).performance = { now: jest.fn() };
 
@@ -13,11 +14,13 @@ describe('addTextNode', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => true;
 
-    addTextNode(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(false);
-      expect(textNode.nodeValue).toBe(testContent);
-      expect(textNode.parentNode).toBeNull();
-    });
+    addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
+      result => {
+        expect(result.status).toBe(ContentAdded.NONE);
+        expect(textNode.nodeValue).toBe(testContent);
+        expect(textNode.parentNode).toBeNull();
+      },
+    );
   });
 
   test('succeeds if page never overflows', () => {
@@ -25,11 +28,13 @@ describe('addTextNode', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => false;
 
-    addTextNode(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(true);
-      expect(textNode.nodeValue).toBe(testContent);
-      expect(textNode.parentNode).toBe(mockParent);
-    });
+    addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
+      result => {
+        expect(result.status).toBe(ContentAdded.ALL);
+        expect(textNode.nodeValue).toBe(testContent);
+        expect(textNode.parentNode).toBe(mockParent);
+      },
+    );
   });
 });
 
@@ -42,8 +47,8 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => true;
 
-    fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(false);
+    addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
+      expect(result.status).toBe(ContentAdded.NONE);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
     });
@@ -54,8 +59,8 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => false;
 
-    fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(true);
+    addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
+      expect(result.status).toBe(ContentAdded.ALL);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBe(mockParent);
     });
@@ -66,8 +71,8 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const page = () => textNode.nodeValue !== '';
 
-    fillWordsUntilOverflow(textNode, mockParent, page).then((result) => {
-      expect(result.completed).toBe(false);
+    addTextUntilOverflow(textNode, mockParent, page).then(result => {
+      expect(result.status).toBe(ContentAdded.NONE);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
     });
@@ -78,15 +83,19 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 4;
 
-    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(textNode.nodeValue).toBe('Test');
-      expect(textNode.parentNode).toBe(mockParent);
+    return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
+      result => {
+        expect(result.status).toBe(ContentAdded.PARTIAL);
 
-      let remainder = result.remainder!;
-      expect(remainder.nodeType).toBe(Node.TEXT_NODE);
-      expect(remainder.nodeValue).toBe(' text content');
-      expect(remainder.parentNode).toBeNull();
-    });
+        expect(textNode.nodeValue).toBe('Test');
+        expect(textNode.parentNode).toBe(mockParent);
+
+        let remainder = result.remainder!;
+        expect(remainder.nodeType).toBe(Node.TEXT_NODE);
+        expect(remainder.nodeValue).toBe(' text content');
+        expect(remainder.parentNode).toBeNull();
+      },
+    );
   });
 
   test('backs up to word boundary', () => {
@@ -94,15 +103,19 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 7;
 
-    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(textNode.nodeValue).toBe('Test');
-      expect(textNode.parentNode).toBe(mockParent);
+    return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
+      result => {
+        expect(result.status).toBe(ContentAdded.PARTIAL);
 
-      let remainder = result.remainder!;
-      expect(remainder.nodeType).toBe(Node.TEXT_NODE);
-      expect(remainder.nodeValue).toBe(' text content');
-      expect(remainder.parentNode).toBeNull();
-    });
+        expect(textNode.nodeValue).toBe('Test');
+        expect(textNode.parentNode).toBe(mockParent);
+
+        let remainder = result.remainder!;
+        expect(remainder.nodeType).toBe(Node.TEXT_NODE);
+        expect(remainder.nodeValue).toBe(' text content');
+        expect(remainder.parentNode).toBeNull();
+      },
+    );
   });
 
   test('cancels entirely when backing up past first word', () => {
@@ -110,72 +123,77 @@ describe('fillUntilOverflow', () => {
     const textNode = document.createTextNode(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 2;
 
-    return fillWordsUntilOverflow(textNode, mockParent, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(false);
-      expect(textNode.nodeValue).toBe(testContent);
-      expect(textNode.parentNode).toBeNull();
-    });
+    return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
+      result => {
+        expect(result.status).toBe(ContentAdded.NONE);
+        expect(textNode.nodeValue).toBe(testContent);
+        expect(textNode.parentNode).toBeNull();
+      },
+    );
   });
 });
 
 // ----
 //
 // addTextNodeAcrossParents
-describe('addTextNodeAcrossParents', () => {
-  test('doesn\'t fit', () => {
-    const textNode = document.createTextNode(testContent);
-    const p1 = document.createElement('div');
-    const next = () => document.createElement('div');
-    const hasOverflowed = () => true;
+// describe('addTextNodeAcrossParents', () => {
+//   test("doesn't fit", () => {
+//     const textNode = document.createTextNode(testContent);
+//     const p1 = document.createElement('div');
+//     const next = () => document.createElement('div');
+//     const hasOverflowed = () => true;
 
-    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(false);
-      expect(p1.textContent).toBe('');
-    });
-  });
+//     return addSplittableText(textNode, p1, next, hasOverflowed).then(result => {
+//       expect(result.completed).toBe(false);
+//       expect(p1.textContent).toBe('');
+//     });
+//   });
 
-  test('fits on one new page', () => {
-    const textNode = document.createTextNode(testContent);
-    const p1 = document.createElement('div');
-    const p2 = document.createElement('div');
-    const next = () => p2;
-    const hasOverflowed = () => false;
+//   test('fits on one new page', () => {
+//     const textNode = document.createTextNode(testContent);
+//     const p1 = document.createElement('div');
+//     const p2 = document.createElement('div');
+//     const next = () => p2;
+//     const hasOverflowed = () => false;
 
-    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(true);
-      expect(p1.textContent).toBe(testContent);
-      expect(p2.textContent).toBe('');
-    });
-  });
+//     return addSplittableText(textNode, p1, next, hasOverflowed).then(result => {
+//       expect(result.completed).toBe(true);
+//       expect(p1.textContent).toBe(testContent);
+//       expect(p2.textContent).toBe('');
+//     });
+//   });
 
-  test('across two pages', () => {
-    const textNode = document.createTextNode(testContent);
-    const p1 = document.createElement('div');
-    const p2 = document.createElement('div');
-    const next = () => p2;
-    const hasOverflowed = () => p1.textContent!.length > 4;
+//   test('across two pages', () => {
+//     const textNode = document.createTextNode(testContent);
+//     const p1 = document.createElement('div');
+//     const p2 = document.createElement('div');
+//     const next = () => p2;
+//     const hasOverflowed = () => p1.textContent!.length > 4;
 
-    return addSplittableText(textNode, p1, next, hasOverflowed).then((result) => {
-      expect(result.completed).toBe(true);
-      expect(p1.textContent).toBe('Test');
-      expect(p2.textContent).toBe(' text content');
-    });
-  });
+//     return addSplittableText(textNode, p1, next, hasOverflowed).then(result => {
+//       expect(result.completed).toBe(true);
+//       expect(p1.textContent).toBe('Test');
+//       expect(p2.textContent).toBe(' text content');
+//     });
+//   });
 
-  test('across three pages', () => {
-    const textNode = document.createTextNode(testContent);
-    const p1 = document.createElement('div');
-    const p2 = document.createElement('div');
-    const p3 = document.createElement('div');
-    const nextPages = [p3, p2];
-    const next = () => nextPages.pop()!;
-    const hasOverflowed = () => p1.textContent!.length > 4 || p2.textContent!.length > 6;
+//   test('across three pages', () => {
+//     const textNode = document.createTextNode(testContent);
+//     const p1 = document.createElement('div');
+//     const p2 = document.createElement('div');
+//     const p3 = document.createElement('div');
+//     const nextPages = [p3, p2];
+//     const next = () => nextPages.pop()!;
+//     const hasOverflowed = () =>
+//       p1.textContent!.length > 4 || p2.textContent!.length > 6;
 
-    return addSplittableText(textNode, p1, next, hasOverflowed).then((result: any) => {
-      expect(result.completed).toBe(true);
-      expect(p1.textContent).toBe('Test');
-      expect(p2.textContent).toBe(' text');
-      expect(p3.textContent).toBe(' content');
-    });
-  });
-});
+//     return addSplittableText(textNode, p1, next, hasOverflowed).then(
+//       (result: any) => {
+//         expect(result.completed).toBe(true);
+//         expect(p1.textContent).toBe('Test');
+//         expect(p2.textContent).toBe(' text');
+//         expect(p3.textContent).toBe(' content');
+//       },
+//     );
+//   });
+// });

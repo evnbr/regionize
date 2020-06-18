@@ -1,3 +1,5 @@
+import { threadId } from 'worker_threads';
+
 const div = (cls: string): HTMLElement => {
   const el = document.createElement('div');
   el.classList.add(cls);
@@ -6,31 +8,24 @@ const div = (cls: string): HTMLElement => {
 
 class Region {
   element: HTMLElement;
-  content: HTMLElement;
-  path: HTMLElement[];
+  private contentWrap: HTMLElement;
+  previousRegion?: Region;
+  nextRegion?: Region;
   suppressErrors: boolean = false;
 
   constructor(el: HTMLElement) {
     this.element = el;
-    this.content = div('region-content');
-    this.content.style.position = 'relative';
-    this.element.appendChild(this.content);
-    this.path = [];
+    this.contentWrap = div('region-content');
+    this.contentWrap.style.position = 'relative';
+    this.element.append(this.contentWrap);
   }
 
-  setPath(newPath: HTMLElement[]) {
-    this.path = newPath;
-    if (newPath.length > 0) this.content.appendChild(newPath[0]);
-  }
-
-  get currentElement(): HTMLElement {
-    const len = this.path.length;
-    if (len > 0) return this.path[len - 1];
-    return this.content;
+  append(...nodes: (string | Node)[]) {
+    this.contentWrap.append(...nodes);
   }
 
   isEmpty(): boolean {
-    const el: HTMLElement = this.content;
+    const el: HTMLElement = this.contentWrap;
     if (el.textContent === null) return true;
     return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
@@ -41,7 +36,7 @@ class Region {
   }
 
   overflowAmount(): number {
-    const contentH = this.content.offsetHeight;
+    const contentH = this.contentWrap.offsetHeight;
     const boxH = this.element.offsetHeight;
     if (boxH === 0)
       throw Error(

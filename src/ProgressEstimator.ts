@@ -1,22 +1,22 @@
 const sec = (ms: number) => (ms / 1000).toFixed(2);
 
 class Estimator {
-  completed = 0;
+  addedCount = 0;
   timeWaiting = 0;
   startTime = window.performance.now();
-  capacity: number;
+  totalCount: number;
 
   constructor(elementCount: number) {
-    this.capacity = elementCount;
+    this.totalCount = elementCount;
   }
-  increment() {
-    this.completed += 1;
+  incrementAddedCount() {
+    this.addedCount += 1;
   }
   addWaitTime(t: number) {
     this.timeWaiting += t;
   }
-  get percentComplete() {
-    return this.completed / this.capacity;
+  getPercentComplete() {
+    return this.addedCount / this.totalCount;
   }
   end() {
     const endTime = window.performance.now();
