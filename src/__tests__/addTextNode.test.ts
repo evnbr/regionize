@@ -1,5 +1,5 @@
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from '../addTextNode';
-import { ContentAdded } from '../types';
+import { AddedStatus } from '../types';
 
 (global as any).performance = { now: jest.fn() };
 
@@ -16,7 +16,7 @@ describe('addTextNode', () => {
 
     addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
       result => {
-        expect(result.status).toBe(ContentAdded.NONE);
+        expect(result.status).toBe(AddedStatus.NONE);
         expect(textNode.nodeValue).toBe(testContent);
         expect(textNode.parentNode).toBeNull();
       },
@@ -30,7 +30,7 @@ describe('addTextNode', () => {
 
     addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
       result => {
-        expect(result.status).toBe(ContentAdded.ALL);
+        expect(result.status).toBe(AddedStatus.ALL);
         expect(textNode.nodeValue).toBe(testContent);
         expect(textNode.parentNode).toBe(mockParent);
       },
@@ -48,7 +48,7 @@ describe('fillUntilOverflow', () => {
     const hasOverflowed = () => true;
 
     addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
-      expect(result.status).toBe(ContentAdded.NONE);
+      expect(result.status).toBe(AddedStatus.NONE);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
     });
@@ -60,7 +60,7 @@ describe('fillUntilOverflow', () => {
     const hasOverflowed = () => false;
 
     addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
-      expect(result.status).toBe(ContentAdded.ALL);
+      expect(result.status).toBe(AddedStatus.ALL);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBe(mockParent);
     });
@@ -72,7 +72,7 @@ describe('fillUntilOverflow', () => {
     const page = () => textNode.nodeValue !== '';
 
     addTextUntilOverflow(textNode, mockParent, page).then(result => {
-      expect(result.status).toBe(ContentAdded.NONE);
+      expect(result.status).toBe(AddedStatus.NONE);
       expect(textNode.nodeValue).toBe(testContent);
       expect(textNode.parentNode).toBeNull();
     });
@@ -85,7 +85,7 @@ describe('fillUntilOverflow', () => {
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
       result => {
-        expect(result.status).toBe(ContentAdded.PARTIAL);
+        expect(result.status).toBe(AddedStatus.PARTIAL);
 
         expect(textNode.nodeValue).toBe('Test');
         expect(textNode.parentNode).toBe(mockParent);
@@ -105,7 +105,7 @@ describe('fillUntilOverflow', () => {
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
       result => {
-        expect(result.status).toBe(ContentAdded.PARTIAL);
+        expect(result.status).toBe(AddedStatus.PARTIAL);
 
         expect(textNode.nodeValue).toBe('Test');
         expect(textNode.parentNode).toBe(mockParent);
@@ -125,7 +125,7 @@ describe('fillUntilOverflow', () => {
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
       result => {
-        expect(result.status).toBe(ContentAdded.NONE);
+        expect(result.status).toBe(AddedStatus.NONE);
         expect(textNode.nodeValue).toBe(testContent);
         expect(textNode.parentNode).toBeNull();
       },
