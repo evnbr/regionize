@@ -1,5 +1,6 @@
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from '../addTextNode';
 import { AddedStatus } from '../types';
+import * as dom from './dom-test-helper';
 
 (global as any).performance = { now: jest.fn() };
 
@@ -10,8 +11,8 @@ const testContent = 'Test text content';
 // addTextNode
 describe('addTextNode', () => {
   test('cancels if page overflows', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => true;
 
     addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
@@ -24,8 +25,8 @@ describe('addTextNode', () => {
   });
 
   test('succeeds if page never overflows', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => false;
 
     addTextNodeWithoutSplit(textNode, mockParent, hasOverflowed).then(
@@ -43,8 +44,8 @@ describe('addTextNode', () => {
 // addTextUntilOverflow
 describe('fillUntilOverflow', () => {
   test('cancels if page instantly overflows', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => true;
 
     addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
@@ -55,8 +56,8 @@ describe('fillUntilOverflow', () => {
   });
 
   test('succeeds if content instantly fits', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => false;
 
     addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(result => {
@@ -67,8 +68,8 @@ describe('fillUntilOverflow', () => {
   });
 
   test('cancels if page overflows when not length > 0 (ie, inline elements that collapses without content)', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const page = () => textNode.nodeValue !== '';
 
     addTextUntilOverflow(textNode, mockParent, page).then(result => {
@@ -79,8 +80,8 @@ describe('fillUntilOverflow', () => {
   });
 
   test('succeeds when break on word boundary', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 4;
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
@@ -99,8 +100,8 @@ describe('fillUntilOverflow', () => {
   });
 
   test('backs up to word boundary', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 7;
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(
@@ -119,8 +120,8 @@ describe('fillUntilOverflow', () => {
   });
 
   test('cancels entirely when backing up past first word', () => {
-    const mockParent = document.createElement('div');
-    const textNode = document.createTextNode(testContent);
+    const mockParent = dom.div();
+    const textNode = dom.text(testContent);
     const hasOverflowed = () => textNode.nodeValue!.length > 2;
 
     return addTextUntilOverflow(textNode, mockParent, hasOverflowed).then(

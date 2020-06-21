@@ -5,17 +5,13 @@ import { nextWordEnd, previousWordEnd } from './stringUtils';
 
 type Checker = () => boolean;
 
-const createTextNode = (text: string): Text => {
-  return document.createTextNode(text);
-};
-
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
 const addTextNodeWithoutSplit = async (
   textNode: Text,
   container: HTMLElement,
   hasOverflowed: Checker,
-): Promise<AddAttemptResult<Text>> => {
+): Promise<AddAttemptResult> => {
   container.appendChild(textNode);
   const success = !hasOverflowed();
   if (!success) container.removeChild(textNode);
@@ -29,7 +25,7 @@ const addTextUntilOverflow = async (
   textNode: Text,
   container: HTMLElement,
   hasOverflowed: Checker,
-): Promise<AddAttemptResult<Text>> => {
+): Promise<AddAttemptResult> => {
   const originalText = textNode.nodeValue || '';
   container.appendChild(textNode);
 
@@ -54,8 +50,10 @@ const addTextUntilOverflow = async (
 
   // Back out to word boundary
   const wordEnd = previousWordEnd(originalText, proposedEnd);
+  const fittingText = originalText.substr(0, wordEnd);
+  const isAllWhitespace = fittingText.trim() === '';
 
-  if (wordEnd < 1) {
+  if (wordEnd < 1 || isAllWhitespace) {
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     container.removeChild(textNode);
@@ -63,14 +61,13 @@ const addTextUntilOverflow = async (
   }
 
   // trim text to word
-  const fittingText = originalText.substr(0, wordEnd);
   const overflowingText = originalText.substr(wordEnd);
   textNode.nodeValue = fittingText;
 
   // Create a new text node for the next flow box
   return {
     status: AddedStatus.PARTIAL,
-    remainder: createTextNode(overflowingText),
+    remainder: document.createTextNode(overflowingText),
   };
 };
 

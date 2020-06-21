@@ -4,6 +4,12 @@ const isTextNode = (node: Node): node is Text => {
 const isElement = (node: Node): node is HTMLElement => {
   return node.nodeType === Node.ELEMENT_NODE;
 };
+const isNode = (input: any): input is Node => {
+  return input && input.nodeType;
+};
+const isString = (input: any): input is string => {
+  return input && typeof input === 'string';
+};
 const isScript = (node: Element): boolean => {
   return node.tagName === 'SCRIPT';
 };
@@ -17,4 +23,11 @@ const isContentElement = (node: Node): node is HTMLElement => {
   return isElement(node) && !isScript(node);
 };
 
-export { isTextNode, isElement, isContentElement, isUnloadedImage };
+export {
+  isTextNode,
+  isNode,
+  isString,
+  isElement,
+  isContentElement,
+  isUnloadedImage,
+};

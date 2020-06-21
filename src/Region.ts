@@ -1,28 +1,23 @@
-const div = (cls: string): HTMLElement => {
-  const el = document.createElement('div');
-  el.classList.add(cls);
-  return el;
-};
-
 class Region {
   element: HTMLElement;
-  private contentWrap: HTMLElement;
+  private measurementWrapper: HTMLElement;
   previousRegion?: Region;
   nextRegion?: Region;
 
   constructor(el: HTMLElement) {
     this.element = el;
-    this.contentWrap = div('region-content');
-    this.contentWrap.style.position = 'relative';
-    this.element.append(this.contentWrap);
+    this.measurementWrapper = document.createElement('div');
+    this.measurementWrapper.classList.add('region-content');
+    this.measurementWrapper.style.position = 'relative';
+    this.element.append(this.measurementWrapper);
   }
 
   append(...nodes: (string | Node)[]) {
-    this.contentWrap.append(...nodes);
+    this.measurementWrapper.append(...nodes);
   }
 
   isEmpty(): boolean {
-    const el: HTMLElement = this.contentWrap;
+    const el: HTMLElement = this.measurementWrapper;
     if (el.textContent === null) return true;
     return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
@@ -33,13 +28,13 @@ class Region {
   }
 
   overflowAmount(): number {
-    const contentH = this.contentWrap.offsetHeight;
-    const boxH = this.element.offsetHeight;
-    if (boxH === 0)
+    const contentHeight = this.measurementWrapper.offsetHeight;
+    const containerHeight = this.element.offsetHeight;
+    if (containerHeight === 0)
       throw Error(
         'Regionizer: Trying to flow into an element with zero height.',
       );
-    return contentH - boxH;
+    return contentHeight - containerHeight;
   }
 
   hasOverflowed(): boolean {

@@ -12,15 +12,12 @@ export enum AddedStatus {
   NONE = 'none',
 }
 
-export type AddAttemptResult<T> = {
+export type AddAttemptResult = {
   status: AddedStatus;
-  remainder?: T;
+  remainder?: Node;
 };
 
-export type AsyncRuleApplier = (
-  el: HTMLElement,
-  next: RegionGetter,
-) => Promise<any> | undefined;
+export type AsyncRuleApplier = (el: HTMLElement) => Promise<any> | undefined;
 
 export type SplitRuleApplier = (
   original: HTMLElement,
@@ -29,30 +26,31 @@ export type SplitRuleApplier = (
   cloner?: ElementCloner,
 ) => void;
 
-export interface FlowProgressEvent {
-  state: 'inProgress' | 'imageLoading' | 'done';
+export type RegionizeProgressEventName = 'inProgress' | 'imageLoading' | 'done';
+
+export interface RegionizeProgressEvent {
+  state: RegionizeProgressEventName;
   estimatedProgress: number;
   imageName?: string;
   imageWaitTime?: number;
 }
 
-export interface FlowOptions {
-  content: HTMLElement;
+export interface RegionizeOptions {
   createRegion: RegionGetter;
-  applySplit?: SplitRuleApplier;
+  onDidSplit?: SplitRuleApplier;
   canSplit?: ElementChecker;
   shouldTraverse?: ElementChecker;
-  beforeAdd?: AsyncRuleApplier;
-  afterAdd?: AsyncRuleApplier;
-  onProgress?: (e: FlowProgressEvent) => void;
+  onWillAdd?: AsyncRuleApplier;
+  onDidAdd?: AsyncRuleApplier;
+  onProgress?: (e: RegionizeProgressEvent) => void;
 }
 
-export interface FlowCallbacks {
+export interface RegionizeDelegate {
   createRegion: RegionGetter;
-  applySplit: SplitRuleApplier;
+  onDidSplit: SplitRuleApplier;
   canSplit: ElementChecker;
   shouldTraverse: ElementChecker;
-  beforeAdd: AsyncRuleApplier;
-  afterAdd: AsyncRuleApplier;
-  onProgress: (e: FlowProgressEvent) => void;
+  onWillAdd: AsyncRuleApplier;
+  onDidAdd: AsyncRuleApplier;
+  onProgress: (e: RegionizeProgressEvent) => void;
 }

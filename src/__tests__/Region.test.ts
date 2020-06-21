@@ -1,6 +1,7 @@
 import Region from '../Region';
+import * as dom from './dom-test-helper';
 
-const setMockHeight = (el: HTMLElement, fakeHeight: number) => {
+const setMockHeight = (el: Element, fakeHeight: number) => {
   Object.defineProperty(el, 'offsetHeight', {
     get: jest.fn(() => {
       return fakeHeight;
@@ -10,8 +11,8 @@ const setMockHeight = (el: HTMLElement, fakeHeight: number) => {
 };
 
 test('Region isEmpty works', () => {
-  const div = document.createElement('div');
-  const textNode = document.createTextNode('content');
+  const div = dom.div();
+  const textNode = dom.text('content');
   const region = new Region(div);
 
   expect(region.isEmpty()).toBe(true);
@@ -22,41 +23,41 @@ test('Region isEmpty works', () => {
 });
 
 test('Region isReasonableSize works', () => {
-  const div = document.createElement('div');
+  const div = dom.div();
   const region = new Region(div);
 
   Element.prototype.getBoundingClientRect = jest.fn(() => {
-    return { width: 20, height: 20 };
+    return { width: 20, height: 20 } as DOMRect;
   });
   expect(region.isReasonableSize()).toBe(false);
 
   Element.prototype.getBoundingClientRect = jest.fn(() => {
-    return { width: 120, height: 120 };
+    return { width: 120, height: 120 } as DOMRect;
   });
   expect(region.isReasonableSize()).toBe(true);
 });
 
 test('Region hasOverflowed works', () => {
-  const div = document.createElement('div');
+  const div = dom.div();
   const region = new Region(div);
 
   setMockHeight(div, 100);
 
-  setMockHeight(region.content, 20);
+  setMockHeight(region.element.firstElementChild, 20);
   expect(region.hasOverflowed()).toBe(false);
 
-  setMockHeight(region.content, 100);
+  setMockHeight(region.element.firstElementChild, 100);
   expect(region.hasOverflowed()).toBe(true);
 
-  setMockHeight(region.content, 90);
+  setMockHeight(region.element.firstElementChild, 90);
   expect(region.hasOverflowed()).toBe(false);
 
-  setMockHeight(region.content, 120);
+  setMockHeight(region.element.firstElementChild, 120);
   expect(region.hasOverflowed()).toBe(true);
 });
 
 test('Region hasOverflowed throws on zero height', () => {
-  const div = document.createElement('div');
+  const div = dom.div();
   const region = new Region(div);
 
   setMockHeight(div, 0);
