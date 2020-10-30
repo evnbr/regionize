@@ -26,7 +26,7 @@ const addTextUntilOverflow = async (
   container: HTMLElement,
   hasOverflowed: Checker,
 ): Promise<AddAttemptResult> => {
-  const originalText = textNode.nodeValue || '';
+  const originalText = textNode.nodeValue ?? '';
   container.appendChild(textNode);
 
   if (!hasOverflowed() || isInsideOverflowIgnoringElement(container)) {

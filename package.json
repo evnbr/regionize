@@ -24,6 +24,7 @@
     "@types/node": "^13.13.35",
     "babel-core": "^6.26.3",
     "babel-jest": "^22.4.4",
+    "babel-plugin-const-enum": "^1.0.1",
     "babel-plugin-external-helpers": "^6.22.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",

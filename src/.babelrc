@@ -4,6 +4,12 @@
       "presets": [["@babel/preset-env"]],
       "plugins": [
         [
+          "const-enum",
+          {
+            "transform": "constObject"
+          }
+        ],
+        [
           "@babel/plugin-transform-runtime",
           {
             "regenerator": true

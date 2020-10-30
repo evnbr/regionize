@@ -1,6 +1,7 @@
 import { RegionGetter } from '../types';
 import flowIntoRegions from '../flowIntoRegions';
 import { h, div, span, p, section } from './dom-test-helper';
+import MockRegion from './mockRegion';
 
 let time = 0;
 (global as any).performance = {
@@ -10,45 +11,22 @@ let time = 0;
   },
 };
 
-let mockOverflow = (el: HTMLElement) => {
-  return el.textContent!.length > 10;
-};
-
 const allText = (regions: any) =>
   regions
     .map((region: any) => region.element.textContent)
     .join('')
     .replace(/\s+/g, '');
 
-const MockRegion = () => {
-  const element = div();
-  const content = div();
-  element.append(content);
-  element.classList.add('box');
-  content.classList.add('content');
-  const hasOverflowed = () => mockOverflow(content);
-  const append = nodes => content.append(nodes);
-  const instance = {
-    append,
-    element,
-    isEmpty: () => false,
-    hasOverflowed,
-    isReasonableSize: true,
-  };
-  return instance;
-};
-
 test('Preserves content order (10char overflow)', async () => {
   const a = div('A content.', p('B content.', span('C content.')));
 
-  const regions: any[] = [];
+  const regions: MockRegion[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => el.textContent!.length > 10);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 10;
   await flowIntoRegions(a, {
     createRegion: (createRegion as any) as RegionGetter,
   });
@@ -63,12 +41,11 @@ test('Splits a single div over many pages (10char overflow)', async () => {
 
   const regions: any[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => el.textContent!.length > 10);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 10;
   await flowIntoRegions(content, {
     createRegion: (createRegion as any) as RegionGetter,
   });
@@ -97,12 +74,11 @@ test('Split elements over many pages (100char overflow)', async () => {
 
   const regions: any[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => el.textContent!.length > 100);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions(content, {
     createRegion: (createRegion as any) as RegionGetter,
   });
@@ -128,15 +104,14 @@ test('Split elements over many pages (5children overflow)', async () => {
 
   const regions: any[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => {
+      const count = (el.querySelectorAll('*') || []).length;
+      return count > 5;
+    });
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => {
-    const count = (el.querySelectorAll('*') || []).length;
-    return count > 5;
-  };
   await flowIntoRegions(content, {
     createRegion: (createRegion as any) as RegionGetter,
   });
@@ -159,12 +134,11 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   const canSplit = (el: HTMLElement) => !el.matches('p');
   const regions: any[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => el.textContent!.length > 100);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 100;
   await flowIntoRegions(content, {
     createRegion: (createRegion as any) as RegionGetter,
     canSplit,
@@ -196,16 +170,15 @@ test("Shifts appropriate parent if can't split", async () => {
 
   const regions: any[] = [];
   const createRegion = () => {
-    const r = MockRegion();
+    const r = new MockRegion(el => {
+      const count = (el.querySelectorAll('*') || []).length;
+      return count > 5;
+    });
     regions.push(r);
     return r;
   };
 
   const content = div(splittableWrap);
-  mockOverflow = el => {
-    const count = (el.querySelectorAll('*') || []).length;
-    return count > 5;
-  };
   await flowIntoRegions(content, {
     createRegion: (createRegion as any) as RegionGetter,
   });
@@ -264,7 +237,9 @@ test('Throws Errors when missing required parameters', async () => {
   expect(
     (async () => {
       await flowIntoRegions(document.createElement('div'), {
-        createRegion: () => MockRegion(),
+        createRegion: () => {
+          return new MockRegion(() => true);
+        },
       } as any);
     })(),
   ).resolves.not.toThrow();

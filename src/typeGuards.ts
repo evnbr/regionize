@@ -1,8 +1,8 @@
 const isTextNode = (node: Node): node is Text => {
   return node.nodeType === Node.TEXT_NODE;
 };
-const isElement = (node: Node): node is HTMLElement => {
-  return node.nodeType === Node.ELEMENT_NODE;
+const isElement = (input: any): input is HTMLElement => {
+  return input && input.nodeType === Node.ELEMENT_NODE;
 };
 const isNode = (input: any): input is Node => {
   return input && input.nodeType;

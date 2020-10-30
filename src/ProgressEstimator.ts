@@ -5,6 +5,8 @@ class Estimator {
   timeWaiting = 0;
   startTime = window.performance.now();
   totalCount: number;
+  totalTime = 0;
+  layoutTime = 0;
 
   constructor(elementCount: number) {
     this.totalCount = elementCount;
@@ -20,13 +22,8 @@ class Estimator {
   }
   end() {
     const endTime = window.performance.now();
-    const totalTime = endTime - this.startTime;
-    const layoutTime = totalTime - this.timeWaiting;
-    console.log(
-      `📖 Layout ready in ${sec(layoutTime)}s (plus ${sec(
-        this.timeWaiting,
-      )}s waiting for images)`,
-    );
+    this.totalTime = endTime - this.startTime;
+    this.layoutTime = this.totalTime - this.timeWaiting;
   }
 }
 

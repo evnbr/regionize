@@ -1,21 +1,24 @@
+import { isSplit } from './isSplit';
+
 const preserveNumbering = (
   original: HTMLElement,
-  clone: HTMLElement,
-  nextChild?: HTMLElement,
+  remainder: HTMLElement,
 ): void => {
   // restart numbering
-  let prevStart = 1;
+  let prevStart = 1; // null is implicitly 1, not 0
+
   if (original.hasAttribute('start')) {
-    // the OL doesn't start from 0 either
-    prevStart = parseInt(original.getAttribute('start') || '', 10);
+    // the OL doesn't start from 1 either
+    prevStart = parseInt(original.getAttribute('start')!, 10);
   }
-  if (nextChild && nextChild.tagName === 'LI') {
-    // the first list item is a continuation
+  const nextChild = remainder.firstElementChild;
+  if (nextChild && nextChild.tagName === 'LI' && isSplit(nextChild)) {
+    // the next list item is a continuation
     prevStart -= 1;
   }
   const prevCount = original.children.length;
   const newStart = prevStart + prevCount;
-  clone.setAttribute('start', `${newStart}`);
+  remainder.setAttribute('start', `${newStart}`);
 };
 
 export default preserveNumbering;

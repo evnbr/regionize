@@ -1,12 +1,10 @@
-import Region from './Region';
+import type Region from './Region';
 
 export type ElementChecker = (el: HTMLElement) => boolean;
-export type ElementCloner = (el: HTMLElement) => HTMLElement;
-export type ElementGetter = () => HTMLElement;
 
 export type RegionGetter = () => Region;
 
-export enum AddedStatus {
+export const enum AddedStatus {
   ALL = 'all',
   PARTIAL = 'partial',
   NONE = 'none',
@@ -23,7 +21,7 @@ export type SplitRuleApplier = (
   original: HTMLElement,
   clone: HTMLElement,
   nextChild?: HTMLElement,
-  cloner?: ElementCloner,
+  cloner?: (el: HTMLElement) => HTMLElement,
 ) => void;
 
 export type RegionizeProgressEventName = 'inProgress' | 'imageLoading' | 'done';
@@ -32,6 +30,7 @@ export interface RegionizeProgressEvent {
   state: RegionizeProgressEventName;
   estimatedProgress: number;
   imageName?: string;
+  totalTime?: number;
   imageWaitTime?: number;
 }
 

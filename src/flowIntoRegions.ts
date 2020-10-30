@@ -10,6 +10,7 @@ import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
+import { isSplit, setIsSplit } from './isSplit';
 import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
 import Region from './Region';
@@ -20,8 +21,6 @@ const never = () => false;
 
 const cloneShallow = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
-
-const IS_SPLIT_ATTR = 'data-region-split';
 
 class RegionFlowManager {
   // the only state that persists during traversal.
@@ -46,36 +45,36 @@ class RegionFlowManager {
 
   private emitProgress(eventName: RegionizeProgressEventName) {
     if (!this.estimator) return;
-    this.callbackDelegate.onProgress({
-      state: eventName,
-      estimatedProgress: this.estimator.getPercentComplete(),
-    });
+    if (eventName === 'done') {
+      this.estimator.end();
+      this.callbackDelegate.onProgress({
+        state: eventName,
+        estimatedProgress: 1,
+        totalTime: this.estimator.totalTime,
+        imageWaitTime: this.estimator.timeWaiting,
+      });
+    } else {
+      this.callbackDelegate.onProgress({
+        state: eventName,
+        estimatedProgress: this.estimator.getPercentComplete(),
+      });
+    }
   }
 
-  private applySplitRules(
-    original: HTMLElement,
-    clone: HTMLElement,
-    nextChild?: HTMLElement,
-  ) {
-    if (original.tagName === 'OL') {
-      orderedListRule(original, clone, nextChild);
+  private applySplitRules(original: HTMLElement, remainder: HTMLElement) {
+    if (original.matches('ol')) {
+      orderedListRule(original, remainder);
     }
-    if (original.tagName === 'TR' && nextChild) {
-      tableRowRule(original, clone, nextChild, this.deepCloneWithRules);
+    if (original.matches('tr')) {
+      tableRowRule(original, remainder, this.deepCloneWithRules.bind(this));
     }
-    clone.setAttribute(IS_SPLIT_ATTR, 'true');
+    setIsSplit(remainder);
     this.callbackDelegate.onDidSplit(
       original,
-      clone,
-      nextChild,
+      remainder,
+      remainder.firstElementChild as HTMLElement,
       this.deepCloneWithRules,
     );
-  }
-
-  private shallowCloneWithRules(el: HTMLElement): HTMLElement {
-    const clone = cloneShallow(el);
-    this.applySplitRules(el, clone);
-    return clone;
   }
 
   private deepCloneWithRules(el: HTMLElement): HTMLElement {
@@ -169,7 +168,7 @@ class RegionFlowManager {
 
     // Transforms before adding. Be sure to only apply this once elements,
     // as this codepath is called for continuations too
-    if (!element.hasAttribute(IS_SPLIT_ATTR)) {
+    if (!isSplit(element)) {
       await this.callbackDelegate.onWillAdd(element);
     }
 
@@ -222,7 +221,7 @@ class RegionFlowManager {
 
         // If we reach here, not everything fit. Create a remainder element
         // that can be added to the next region.
-        const remainder = this.shallowCloneWithRules(element);
+        const remainder = cloneShallow(element);
 
         if (childResult.status === AddedStatus.NONE) {
           remainder.append(child, ...remainingChildNodes);
@@ -230,6 +229,9 @@ class RegionFlowManager {
         if (childResult.remainder) {
           remainder.append(childResult.remainder, ...remainingChildNodes);
         }
+
+        this.applySplitRules(element, remainder);
+
         return {
           status: AddedStatus.PARTIAL,
           remainder: remainder,
