@@ -11,9 +11,7 @@ export type TextLayoutResult = {
   waitTime?: number;
 };
 
-const createTextNode: (text: string) => Text = document.createTextNode.bind(
-  document,
-);
+const createTextNode = (text: string): Text => document.createTextNode(text);
 
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
