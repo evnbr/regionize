@@ -1,6 +1,6 @@
 import { flowIntoRegions } from '../flowIntoRegions';
 import { h, div, span, p, section } from './dom-test-helper';
-import MockRegion from './mockRegion';
+import MockRegion from './MockRegion';
 import type Region from '../Region';
 
 let time = 0;
