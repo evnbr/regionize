@@ -12,11 +12,11 @@ const preserveTableColumns = (
   }
 
   const currentCellIndex = originalRowCells.length;
-  for (let i = 0; i < currentCellIndex; i += 1) {
+  for (let i = currentCellIndex - 2; i >= 0; i -= 1) {
     const origCell = originalRowCells[i];
     if (origCell) {
       const continuedCell = deepClone(origCell);
-      remainder.append(continuedCell);
+      remainder.prepend(continuedCell);
     }
   }
 };

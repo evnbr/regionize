@@ -6,7 +6,7 @@ import type Region from '../Region';
 describe('Table rows', () => {
   test('Cloned table row continues first column', async () => {
     const tbl = table(
-      tr(td('r1 cell 1,'), td('r1 cell 2, more,'), td('r1 cell 3')),
+      tr(td('r1 cell 1,'), td('r1 cell 2,'), td('r1 cell 3, more,'), td('r1 cell 4')),
     );
 
     const regions: MockRegion[] = [];
@@ -24,8 +24,8 @@ describe('Table rows', () => {
     await flowIntoRegions(tbl, { createRegion });
 
     expect(regions.length).toBe(2);
-    expect(regions[0].element.textContent).toBe('r1 cell 1,r1 cell 2,');
-    expect(regions[1].element.textContent).toBe('r1 cell 1,more,r1 cell 3');
+    expect(regions[0].element.textContent).toBe('r1 cell 1,r1 cell 2,r1 cell 3,');
+    expect(regions[1].element.textContent).toBe('r1 cell 1,r1 cell 2, more,r1 cell 4');
   });
 });
 // test('Cloned row copies first column', async () => {

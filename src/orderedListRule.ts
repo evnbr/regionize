@@ -13,7 +13,7 @@ const preserveNumbering = (
   }
   const nextChild = remainder.firstElementChild;
   if (nextChild && nextChild.tagName === 'LI' && isSplitAcrossRegions(nextChild)) {
-    // the next list item is a continuation
+    // the first list item actually started in the previous region
     prevStart -= 1;
   }
   const prevCount = original.children.length;
