@@ -1,6 +1,6 @@
 const maxWorkTimePerFrame = 30; // ms
 
-const rAF = (): Promise<number> =>
+const nextFrame = (): Promise<number> =>
   new Promise(resolve => {
     requestAnimationFrame(t => resolve(t));
   });
@@ -12,8 +12,8 @@ const shouldYield = (): boolean => {
   return timeSinceYield > maxWorkTimePerFrame;
 };
 
-const yieldIfNecessary = async (): Promise<void> => {
-  if (shouldYield()) lastYieldTime = await rAF();
+const yieldIfNeeded = async (): Promise<void> => {
+  if (shouldYield()) lastYieldTime = await nextFrame();
 };
 
-export { shouldYield, yieldIfNecessary };
+export { shouldYield, yieldIfNeeded };

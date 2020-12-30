@@ -1,7 +1,7 @@
-import { RegionGetter } from '../types';
-import flowIntoRegions from '../flowIntoRegions';
+import { flowIntoRegions } from '../flowIntoRegions';
 import { h, div, span, p, section } from './dom-test-helper';
 import MockRegion from './mockRegion';
+import type Region from '../Region';
 
 let time = 0;
 (global as any).performance = {
@@ -24,12 +24,10 @@ test('Preserves content order (10char overflow)', async () => {
   const createRegion = () => {
     const r = new MockRegion(el => el.textContent!.length > 10);
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
-  await flowIntoRegions(a, {
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(a, { createRegion });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -43,12 +41,10 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   const createRegion = () => {
     const r = new MockRegion(el => el.textContent!.length > 10);
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
-  await flowIntoRegions(content, {
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { createRegion });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -76,12 +72,10 @@ test('Split elements over many pages (100char overflow)', async () => {
   const createRegion = () => {
     const r = new MockRegion(el => el.textContent!.length > 100);
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
-  await flowIntoRegions(content, {
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { createRegion });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
@@ -109,12 +103,10 @@ test('Split elements over many pages (5children overflow)', async () => {
       return count > 5;
     });
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
-  await flowIntoRegions(content, {
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { createRegion });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
@@ -136,13 +128,10 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   const createRegion = () => {
     const r = new MockRegion(el => el.textContent!.length > 100);
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
-  await flowIntoRegions(content, {
-    createRegion: (createRegion as any) as RegionGetter,
-    canSplit,
-  });
+  await flowIntoRegions(content, { createRegion, canSplit });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
@@ -175,13 +164,11 @@ test("Shifts appropriate parent if can't split", async () => {
       return count > 5;
     });
     regions.push(r);
-    return r;
+    return r as unknown as Region;
   };
 
   const content = div(splittableWrap);
-  await flowIntoRegions(content, {
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { createRegion });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);

@@ -1,6 +1,6 @@
-import { yieldIfNecessary } from './schedule';
+import { yieldIfNeeded } from './schedule';
 import isInsideOverflowIgnoringElement from './ignoreOverflow';
-import { AddedStatus, AddAttemptResult } from './types';
+import { AppendStatus, AppendResult } from './types';
 import { nextWordEnd, previousWordEnd } from './stringUtils';
 
 type Checker = () => boolean;
@@ -11,12 +11,12 @@ const addTextNodeWithoutSplit = async (
   textNode: Text,
   container: HTMLElement,
   hasOverflowed: Checker,
-): Promise<AddAttemptResult> => {
+): Promise<AppendResult> => {
   container.appendChild(textNode);
   const success = !hasOverflowed();
   if (!success) container.removeChild(textNode);
-  await yieldIfNecessary();
-  return { status: success ? AddedStatus.ALL : AddedStatus.NONE };
+  await yieldIfNeeded();
+  return { status: success ? AppendStatus.ADDED_ALL : AppendStatus.ADDED_NONE };
 };
 
 // Incrementally add words to the container until it just barely doesn't
@@ -25,13 +25,13 @@ const addTextUntilOverflow = async (
   textNode: Text,
   container: HTMLElement,
   hasOverflowed: Checker,
-): Promise<AddAttemptResult> => {
+): Promise<AppendResult> => {
   const originalText = textNode.nodeValue ?? '';
   container.appendChild(textNode);
 
   if (!hasOverflowed() || isInsideOverflowIgnoringElement(container)) {
     // The whole thing fits
-    return { status: AddedStatus.ALL };
+    return { status: AppendStatus.ADDED_ALL };
   }
 
   // Clear the node
@@ -44,7 +44,7 @@ const addTextUntilOverflow = async (
 
     if (proposedEnd < originalText.length) {
       textNode.nodeValue = originalText.substr(0, proposedEnd);
-      await yieldIfNecessary();
+      await yieldIfNeeded();
     }
   }
 
@@ -57,7 +57,7 @@ const addTextUntilOverflow = async (
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     container.removeChild(textNode);
-    return { status: AddedStatus.NONE };
+    return { status: AppendStatus.ADDED_NONE };
   }
 
   // trim text to word
@@ -66,7 +66,7 @@ const addTextUntilOverflow = async (
 
   // Create a new text node for the next flow box
   return {
-    status: AddedStatus.PARTIAL,
+    status: AppendStatus.ADDED_PARTIAL,
     remainder: document.createTextNode(overflowingText),
   };
 };

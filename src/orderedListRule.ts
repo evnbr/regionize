@@ -1,4 +1,4 @@
-import { isSplit } from './isSplit';
+import { isSplitAcrossRegions } from './isSplit';
 
 const preserveNumbering = (
   original: HTMLElement,
@@ -12,7 +12,7 @@ const preserveNumbering = (
     prevStart = parseInt(original.getAttribute('start')!, 10);
   }
   const nextChild = remainder.firstElementChild;
-  if (nextChild && nextChild.tagName === 'LI' && isSplit(nextChild)) {
+  if (nextChild && nextChild.tagName === 'LI' && isSplitAcrossRegions(nextChild)) {
     // the next list item is a continuation
     prevStart -= 1;
   }

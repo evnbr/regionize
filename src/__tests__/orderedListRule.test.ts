@@ -24,9 +24,10 @@ describe('Ordered Lists', () => {
     expect(regions[0].element.querySelector('ol')!.getAttribute('start')).toBe(
       null,
     );
+    // null is implicitly 1, not 0
     expect(regions[1].element.querySelector('ol')!.getAttribute('start')).toBe(
       '2',
-    ); // null is implicitly 1, not 0
+    ); 
     expect(regions[2].element.querySelector('ol')!.getAttribute('start')).toBe(
       '3',
     );
@@ -59,13 +60,27 @@ describe('Ordered Lists', () => {
       '1',
     );
   });
-  //   test('Numbering starts from previous start value', () => {
-  //     const ol = document.createElement('ol');
-  //     ol.setAttribute('start', '5');
-  //     ol.appendChild(document.createElement('li'));
-  //     ol.appendChild(document.createElement('li'));
-  //     const crumb = [ol];
-  //     const newCrumb = clonePath(crumb, applyRulesStub);
-  //     expect(newCrumb[0].getAttribute('start')).toBe('7');
-  // });
+
+  test('Numbering starts from previous start value', async () => {
+    const list = ol(li('item 1'), li('item 2'), li('item 3'));
+    list.setAttribute('start', '5');
+
+    const regions: MockRegion[] = [];
+    const createRegion = () => {
+      const r = new MockRegion(el => el.querySelectorAll('li').length > 2);
+      regions.push(r);
+      return r as unknown as Region;
+    };
+
+    await flowIntoRegions(list, { createRegion });
+
+    expect(regions.length).toBe(2);
+
+    expect(regions[0].element.querySelector('ol')!.getAttribute('start')).toBe(
+      '5',
+    );
+    expect(regions[1].element.querySelector('ol')!.getAttribute('start')).toBe(
+      '7',
+    ); 
+  });
 });
