@@ -1,5 +1,5 @@
 import { RegionGetter } from '../types';
-import flowIntoRegions from '../flowIntoRegions';
+import { flowIntoRegions } from '../flowIntoRegions';
 import { table, tr, td } from './dom-test-helper';
 import MockRegion from './MockRegion';
 

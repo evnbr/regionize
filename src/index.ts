@@ -1,4 +1,4 @@
 import Region from './Region';
-import flowIntoRegions from './flowIntoRegions';
+import { flowIntoRegions, addUntilOverflow } from './flowIntoRegions';
 
-export { Region, flowIntoRegions };
+export { Region, flowIntoRegions, addUntilOverflow };

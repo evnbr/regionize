@@ -1,6 +1,5 @@
 import {
-  RegionizeOptions,
-  RegionizeDelegate,
+  RegionizeConfig,
   AddedStatus,
   AddAttemptResult,
   RegionizeProgressEventName,
@@ -10,36 +9,35 @@ import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
-import { isSplit, setIsSplit } from './isSplit';
+import { isSplitAcrossRegions, setIsSplitAcrossRegions } from './isSplit';
 import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
 import Region from './Region';
 
 const noop = () => {};
+const asyncNoop = (async () => noop());
 const always = () => true;
 const never = () => false;
 
-const cloneShallow = <T extends Node>(el: T) => el.cloneNode(false) as T;
+const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
 class RegionFlowManager {
-  // the only state that persists during traversal.
   estimator?: ProgressEstimator;
+  config: RegionizeConfig;
 
-  // delegated to the caller, ie Bindery.js
-  callbackDelegate: RegionizeDelegate;
-
-  constructor(opts: RegionizeOptions) {
+  constructor(opts: Partial<RegionizeConfig>) {
     if (!opts.createRegion) throw Error('createRegion not specified');
 
-    this.callbackDelegate = {
+    this.config = {
       createRegion: opts.createRegion,
       shouldTraverse: opts.shouldTraverse ?? never,
       onProgress: opts.onProgress ?? noop,
       onDidSplit: opts.onDidSplit ?? noop,
       canSplit: opts.canSplit ?? always,
-      onWillAdd: opts.onWillAdd ?? (async () => noop()),
-      onDidAdd: opts.onDidAdd ?? (async () => noop()),
+      onWillAdd: opts.onWillAdd ?? asyncNoop,
+      onDidRemove: opts.onDidRemove ?? asyncNoop,
+      onDidAdd: opts.onDidAdd ?? asyncNoop,
     };
   }
 
@@ -47,14 +45,14 @@ class RegionFlowManager {
     if (!this.estimator) return;
     if (eventName === 'done') {
       this.estimator.end();
-      this.callbackDelegate.onProgress({
+      this.config.onProgress({
         state: eventName,
         estimatedProgress: 1,
         totalTime: this.estimator.totalTime,
         imageWaitTime: this.estimator.timeWaiting,
       });
     } else {
-      this.callbackDelegate.onProgress({
+      this.config.onProgress({
         state: eventName,
         estimatedProgress: this.estimator.getPercentComplete(),
       });
@@ -68,8 +66,8 @@ class RegionFlowManager {
     if (original.matches('tr')) {
       tableRowRule(original, remainder, this.deepCloneWithRules.bind(this));
     }
-    setIsSplit(remainder);
-    this.callbackDelegate.onDidSplit(
+    setIsSplitAcrossRegions(remainder);
+    this.config.onDidSplit(
       original,
       remainder,
       remainder.firstElementChild as HTMLElement,
@@ -84,7 +82,7 @@ class RegionFlowManager {
   }
 
   private canSplit(element: HTMLElement, region: Region): boolean {
-    if (!this.callbackDelegate.canSplit(element)) {
+    if (!this.config.canSplit(element)) {
       return false;
     }
     if (element === region.element) {
@@ -115,7 +113,7 @@ class RegionFlowManager {
       // TODO: Could optimize this to instead call ensureImageLoaded earlier
       return true;
     }
-    if (this.callbackDelegate.shouldTraverse(element)) {
+    if (this.config.shouldTraverse(element)) {
       // The region size could change as a result of traversing the elements, for example if a footnote would
       // be added that eats into the available space for content. If so, checking for overflow is not accurate.
       return true;
@@ -124,7 +122,7 @@ class RegionFlowManager {
   }
 
   private createRegion(previousRegion?: Region) {
-    const newRegion = this.callbackDelegate.createRegion();
+    const newRegion = this.config.createRegion();
 
     if (previousRegion) {
       previousRegion.nextRegion = newRegion;
@@ -142,7 +140,7 @@ class RegionFlowManager {
 
   private async addText(textNode: Text, parent: HTMLElement, region: Region) {
     const shouldSplitText =
-      this.callbackDelegate.canSplit(parent) &&
+      this.config.canSplit(parent) &&
       !this.shouldIgnoreOverflow(parent);
 
     if (shouldSplitText) {
@@ -166,10 +164,10 @@ class RegionFlowManager {
       await this.ensureImageLoaded(element);
     }
 
-    // Transforms before adding. Be sure to only apply this once elements,
-    // as this codepath is called for continuations too
-    if (!isSplit(element)) {
-      await this.callbackDelegate.onWillAdd(element);
+    // Transforms before adding. Be sure to only apply this once per
+    // element, and not when inserting the remainder of the element
+    if (!isSplitAcrossRegions(element)) {
+      await this.config.onWillAdd(element);
     }
 
     // Append element and push onto the the stack
@@ -180,6 +178,7 @@ class RegionFlowManager {
     if (hasOverflowed && !this.canSplit(element, region)) {
       // If we can't clear and traverse children, we already
       // know it doesn't fit.
+      // TODO: Should we remove it?
       return { status: AddedStatus.NONE };
     }
 
@@ -200,7 +199,7 @@ class RegionFlowManager {
       // Start adding childNodes, when we overflow, assemble a cloned
       // element that contains the remainder childNodes and return.
       while (remainingChildNodes.length > 0) {
-        const child = remainingChildNodes.shift()!;
+        const child = remainingChildNodes.shift()!; // TODO: do we need to use shift()?
 
         let childResult: AddAttemptResult;
 
@@ -221,7 +220,7 @@ class RegionFlowManager {
 
         // If we reach here, not everything fit. Create a remainder element
         // that can be added to the next region.
-        const remainder = cloneShallow(element);
+        const remainder = cloneWithoutChildren(element);
 
         if (childResult.status === AddedStatus.NONE) {
           remainder.append(child, ...remainingChildNodes);
@@ -240,7 +239,7 @@ class RegionFlowManager {
     }
 
     // We added this entire element without overflowing the region.
-    await this.callbackDelegate.onDidAdd(element);
+    await this.config.onDidAdd(element);
 
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
@@ -250,7 +249,7 @@ class RegionFlowManager {
     };
   }
 
-  async addAcrossRegions(content: HTMLElement) {
+  async addAcrossRegions(content: HTMLElement): Promise<void> {
     this.estimator = new ProgressEstimator(
       content.querySelectorAll('*').length,
     );
@@ -275,8 +274,8 @@ class RegionFlowManager {
 
 const flowIntoRegions = async (
   content: HTMLElement,
-  opts: RegionizeOptions,
-) => {
+  opts: Partial<RegionizeConfig>,
+): Promise<void> => {
   if (!content) throw Error('content not specified');
 
   const flowManager = new RegionFlowManager(opts);
@@ -285,13 +284,14 @@ const flowIntoRegions = async (
 
 const addUntilOverflow = async (
   content: HTMLElement,
-  region: Region,
-  opts: RegionizeOptions,
+  container: HTMLElement,
+  opts: Partial<RegionizeConfig>,
 ): Promise<AddAttemptResult> => {
   if (!content) throw Error('content not specified');
 
+  const region = new Region(container);
   const flowManager = new RegionFlowManager(opts);
   return await flowManager.addElement(content, region);
 };
 
-export default flowIntoRegions;
+export { addUntilOverflow, flowIntoRegions };

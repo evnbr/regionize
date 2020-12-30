@@ -34,22 +34,13 @@ export interface RegionizeProgressEvent {
   imageWaitTime?: number;
 }
 
-export interface RegionizeOptions {
-  createRegion: RegionGetter;
-  onDidSplit?: SplitRuleApplier;
-  canSplit?: ElementChecker;
-  shouldTraverse?: ElementChecker;
-  onWillAdd?: AsyncRuleApplier;
-  onDidAdd?: AsyncRuleApplier;
-  onProgress?: (e: RegionizeProgressEvent) => void;
-}
-
-export interface RegionizeDelegate {
+export interface RegionizeConfig {
   createRegion: RegionGetter;
   onDidSplit: SplitRuleApplier;
   canSplit: ElementChecker;
   shouldTraverse: ElementChecker;
   onWillAdd: AsyncRuleApplier;
   onDidAdd: AsyncRuleApplier;
+  onDidRemove: AsyncRuleApplier;
   onProgress: (e: RegionizeProgressEvent) => void;
 }
