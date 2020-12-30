@@ -1,8 +1,8 @@
 import {
   RegionizeConfig,
-  AddedStatus,
-  AddAttemptResult,
-  RegionizeProgressEventName,
+  AppendStatus,
+  AppendResult,
+  ProgressEventName,
 } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 
@@ -22,7 +22,7 @@ const never = () => false;
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
-class RegionFlowManager {
+class FlowManager {
   estimator?: ProgressEstimator;
   config: RegionizeConfig;
 
@@ -41,7 +41,7 @@ class RegionFlowManager {
     };
   }
 
-  private emitProgress(eventName: RegionizeProgressEventName) {
+  private emitProgress(eventName: ProgressEventName) {
     if (!this.estimator) return;
     if (eventName === 'done') {
       this.estimator.end();
@@ -158,7 +158,7 @@ class RegionFlowManager {
     element: HTMLElement,
     region: Region,
     parentEl?: HTMLElement,
-  ): Promise<AddAttemptResult> {
+  ): Promise<AppendResult> {
     // Ensure images are loaded before adding and testing for overflow
     if (isUnloadedImage(element)) {
       await this.ensureImageLoaded(element);
@@ -179,7 +179,7 @@ class RegionFlowManager {
       // If we can't clear and traverse children, we already
       // know it doesn't fit.
       // TODO: Should we remove it?
-      return { status: AddedStatus.NONE };
+      return { status: AppendStatus.ADDED_NONE };
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
@@ -192,7 +192,7 @@ class RegionFlowManager {
         // the children before rejecting.
         element.append(...remainingChildNodes);
         return {
-          status: AddedStatus.NONE,
+          status: AppendStatus.ADDED_NONE,
         };
       }
 
@@ -201,7 +201,7 @@ class RegionFlowManager {
       while (remainingChildNodes.length > 0) {
         const child = remainingChildNodes.shift()!; // TODO: do we need to use shift()?
 
-        let childResult: AddAttemptResult;
+        let childResult: AppendResult;
 
         if (isTextNode(child)) {
           // Figure out how much text fits
@@ -214,7 +214,7 @@ class RegionFlowManager {
           continue;
         }
 
-        if (childResult.status === AddedStatus.ALL) {
+        if (childResult.status === AppendStatus.ADDED_ALL) {
           continue;
         }
 
@@ -222,7 +222,7 @@ class RegionFlowManager {
         // that can be added to the next region.
         const remainder = cloneWithoutChildren(element);
 
-        if (childResult.status === AddedStatus.NONE) {
+        if (childResult.status === AppendStatus.ADDED_NONE) {
           remainder.append(child, ...remainingChildNodes);
         }
         if (childResult.remainder) {
@@ -232,7 +232,7 @@ class RegionFlowManager {
         this.applySplitRules(element, remainder);
 
         return {
-          status: AddedStatus.PARTIAL,
+          status: AppendStatus.ADDED_PARTIAL,
           remainder: remainder,
         };
       }
@@ -245,7 +245,7 @@ class RegionFlowManager {
     this.emitProgress('inProgress');
 
     return {
-      status: AddedStatus.ALL,
+      status: AppendStatus.ADDED_ALL,
     };
   }
 
@@ -278,7 +278,7 @@ const flowIntoRegions = async (
 ): Promise<void> => {
   if (!content) throw Error('content not specified');
 
-  const flowManager = new RegionFlowManager(opts);
+  const flowManager = new FlowManager(opts);
   await flowManager.addAcrossRegions(content);
 };
 
@@ -286,11 +286,11 @@ const addUntilOverflow = async (
   content: HTMLElement,
   container: HTMLElement,
   opts: Partial<RegionizeConfig>,
-): Promise<AddAttemptResult> => {
+): Promise<AppendResult> => {
   if (!content) throw Error('content not specified');
 
   const region = new Region(container);
-  const flowManager = new RegionFlowManager(opts);
+  const flowManager = new FlowManager(opts);
   return await flowManager.addElement(content, region);
 };
 

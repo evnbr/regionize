@@ -1,7 +1,7 @@
-import { RegionGetter } from '../types';
 import { flowIntoRegions } from '../flowIntoRegions';
 import { table, tr, td } from './dom-test-helper';
 import MockRegion from './MockRegion';
+import type Region from '../Region';
 
 describe('Table rows', () => {
   test('Cloned table row continues first column', async () => {
@@ -18,12 +18,10 @@ describe('Table rows', () => {
           .reduce((a, b) => a || b, false);
       });
       regions.push(r);
-      return r;
+      return r as unknown as Region;
     };
 
-    await flowIntoRegions(tbl, {
-      createRegion: (createRegion as any) as RegionGetter,
-    });
+    await flowIntoRegions(tbl, { createRegion });
 
     expect(regions.length).toBe(2);
     expect(regions[0].element.textContent).toBe('r1 cell 1,r1 cell 2,');

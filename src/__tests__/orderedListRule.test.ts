@@ -1,7 +1,7 @@
-import { RegionGetter } from '../types';
 import { flowIntoRegions } from '../flowIntoRegions';
 import { ol, li } from './dom-test-helper';
 import MockRegion from './MockRegion';
+import type Region from '../Region';
 
 describe('Ordered Lists', () => {
   test('Numbering continues on next page', async () => {
@@ -11,12 +11,10 @@ describe('Ordered Lists', () => {
     const createRegion = () => {
       const r = new MockRegion(el => el.querySelectorAll('li').length > 1);
       regions.push(r);
-      return r;
+      return r as unknown as Region;
     };
 
-    await flowIntoRegions(list, {
-      createRegion: (createRegion as any) as RegionGetter,
-    });
+    await flowIntoRegions(list, { createRegion });
 
     expect(regions.length).toBe(3);
     expect(regions[0].element.textContent).toBe('item 1');
@@ -41,12 +39,10 @@ describe('Ordered Lists', () => {
     const createRegion = () => {
       const r = new MockRegion(el => el.textContent.length > 10);
       regions.push(r);
-      return r;
+      return r as unknown as Region;
     };
 
-    await flowIntoRegions(list, {
-      createRegion: (createRegion as any) as RegionGetter,
-    });
+    await flowIntoRegions(list, { createRegion });
 
     expect(regions.length).toBe(3);
     expect(regions[0].element.textContent.trim()).toBe('item 1');

@@ -2,16 +2,14 @@ import type Region from './Region';
 
 export type ElementChecker = (el: HTMLElement) => boolean;
 
-export type RegionGetter = () => Region;
-
-export const enum AddedStatus {
-  ALL = 'all',
-  PARTIAL = 'partial',
-  NONE = 'none',
+export const enum AppendStatus {
+  ADDED_ALL = 'all',
+  ADDED_PARTIAL = 'partial',
+  ADDED_NONE = 'none',
 }
 
-export type AddAttemptResult = {
-  status: AddedStatus;
+export type AppendResult = {
+  status: AppendStatus;
   remainder?: Node;
 };
 
@@ -24,10 +22,10 @@ export type SplitRuleApplier = (
   cloner?: (el: HTMLElement) => HTMLElement,
 ) => void;
 
-export type RegionizeProgressEventName = 'inProgress' | 'imageLoading' | 'done';
+export type ProgressEventName = 'inProgress' | 'imageLoading' | 'done';
 
 export interface RegionizeProgressEvent {
-  state: RegionizeProgressEventName;
+  state: ProgressEventName;
   estimatedProgress: number;
   imageName?: string;
   totalTime?: number;
@@ -35,7 +33,7 @@ export interface RegionizeProgressEvent {
 }
 
 export interface RegionizeConfig {
-  createRegion: RegionGetter;
+  createRegion: () => Region;
   onDidSplit: SplitRuleApplier;
   canSplit: ElementChecker;
   shouldTraverse: ElementChecker;
