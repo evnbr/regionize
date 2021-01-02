@@ -201,6 +201,19 @@ class FlowManager {
           continue;
         }
 
+        // TODO: need to better check if element would be empty, or
+        // is splittable, when creating the remainder
+
+        if (childResult.status === AppendStatus.ADDED_NONE && element.childNodes.length == 0) {
+          // If it doesn't fit with any of the first child, make sure to restore
+          // the children before rejecting.
+          // TODO: keep in sync with line 176?
+          element.append(child);
+          return {
+            status: AppendStatus.ADDED_NONE,
+          };    
+        }
+
         // If we reach here, we have a partial fit. Create a remainder element
         // that can be added to the next region.
         const remainder = cloneWithoutChildren(element);
