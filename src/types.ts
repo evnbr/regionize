@@ -8,10 +8,18 @@ export const enum AppendStatus {
   ADDED_NONE = 'none',
 }
 
-export type AppendResult = {
-  status: AppendStatus;
-  remainder?: Node;
-};
+type WholeNodeAppendResult = {
+  status: AppendStatus.ADDED_ALL | AppendStatus.ADDED_NONE;
+}
+
+type PartialNodeAppendResult = {
+  status: AppendStatus.ADDED_PARTIAL;
+  remainder: Node;
+}
+
+export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
+
+
 
 export type AsyncRuleApplier = (el: HTMLElement) => Promise<any> | undefined;
 

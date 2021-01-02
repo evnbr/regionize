@@ -222,6 +222,7 @@ class FlowManager {
           remainder.append(child, ...remainingChildNodes);
         }
         if (childResult.remainder) {
+        if (childResult.status === AppendStatus.ADDED_PARTIAL) {
           remainder.append(childResult.remainder, ...remainingChildNodes);
         }
 
@@ -262,6 +263,7 @@ class FlowManager {
   ) {
     const result = await this.addElement(content, initialRegion);
     if (result.remainder && isContentElement(result.remainder)) {
+    if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
       const nextRegion = this.config.createRegion();
       await this.addElementAcrossRegions(result.remainder, nextRegion);
     }
