@@ -1,0 +1,135 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  font: 14px/1.5 system-ui;
+  background: #f4f4f4;
+
+  --bg: #f4f4f4;
+  --red: #bb0000;
+  --blue: #008eff;
+  --green: green;
+}
+
+body {
+  padding: 16px;
+}
+
+.fg-gray {
+  color: #444;
+}
+
+.fg-red {
+  color: var(--red);
+}
+
+.fg-blue {
+  color: var(--blue);
+}
+
+.fg-green {
+  color: var(--green);
+}
+
+.item {
+  padding: 12px 0 48px;
+}
+
+.item-title a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+}
+
+.item-title a:hover {
+  color: gray;
+  text-decoration-color: currentColor;
+}
+
+.row {
+  margin-top: 16px;
+  display: flex;
+  flex-flow: row;
+}
+
+.box {
+  width: 300px;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.arrow {
+  padding: 24px;
+  font-size: 1.5em;
+}
+
+.config {
+  width: 420px;
+  background: #e4e4e4;
+  padding: 8px;
+  font: 0.9rem/1.3rem Menlo;
+  white-space: pre;
+}
+
+.content-scroller {
+  border: 1px dashed var(--green);
+  max-height: 300px;
+  overflow-y: scroll;
+  position: relative;
+}
+
+.content-scroller::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 14px;
+}
+
+.content-scroller::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, .3);
+  box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+  border: 4px solid var(--bg);
+}
+
+.content {
+  font: 18px/1.35 serif;
+  padding: 4px 8px;
+}
+
+.content p {
+  margin: 0;
+  text-indent: 1em;
+}
+
+.content li {
+  margin-left: 1.5em;
+}
+
+.content .bordered {
+  padding: 4px 8px;
+  border: 2px solid;
+  margin: 8px 0;
+}
+
+.content .bordered .bordered {
+  border: 2px dashed;
+}
+
+.content .bordered .bordered .bordered {
+  border: 6px double;
+}
+
+.region {
+  border: 1px solid var(--blue);
+  background: white;
+  height: 300px;
+}
+
+.remainder {
+  border: 1px solid var(--red);
+  background: white;
+}
+

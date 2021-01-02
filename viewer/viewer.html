@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Regionize test cases</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Regionize test cases</h1>
+
+    <template id="paragraph-content">
+      <h3>Heading</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum.
+      </p>
+      <p>
+        Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+        turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+        mi vitae est. Mauris placerat eleifend leo.
+      </p>
+    </template>
+
+    <template id="list-content">
+      <h3>List heading</h3>
+      <ol>
+        <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
+        <li>Integer nec odio. Praesent libero.</li>
+        <li>Sed cursus ante dapibus diam. Sed nisi.</li>
+        <li>
+          Pellentesque habitant morbi tristique senectus et netus et malesuada
+          fames ac turpis egestas.
+        </li>
+        <li>
+          Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, 
+          ante. Donec eu libero sit amet quam egestas semper
+        </li>
+        <li>Aenean ultricies mi vitae est.</li>
+        <li>Duis sagittis ipsum. Praesent libero. </li>
+      </ol>
+    </template>
+
+    <template id="nested-content">
+      <h3>Nested heading</h3>
+      <div class="bordered">
+        Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Integer nec odio. Praesent libero.
+        <div class="bordered">
+          Nested box item. Lorem ipsum dolor sit amet, consectetur. aaaaaaa
+          <div class="bordered">
+            Doubly-nested sit amet, consectetur adipiscing elit.
+            Integer nec odio.
+          </div>    
+        </div>  
+        <div class="bordered">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Integer nec odio. Praesent libero.
+        </div>    
+      </div>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    </template>
+
+
+    <template id="row-template">
+      <div class="row">
+        <div>
+          <h4 class="fg-gray">Javascript</h4>
+          <div class="config box">const <b class="fg-gray">config</b> = <span class="config-slot"></span>;
+
+const <b class="fg-red">remainder</b> = await addUntilOverflow(
+  <b class="fg-green">content</b>,
+  <b class="fg-blue">container</b>,
+  <b class="fg-gray">config</b>
+);
+          </div>
+        </div>
+        <div>
+          <h4 class="fg-green">Content</h4>
+          <div class="content-scroller">
+            <div class="content box">
+            </div>
+          </div>
+        </div>
+        <div class="arrow">
+          →
+        </div>
+        <div>
+          <h4 class="fg-blue">Container</h4>
+          <div class="region box">
+          </div>
+        </div>
+        <div>
+          <h4 class="fg-red">Remainder</h4>
+          <div class="remainder box">
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <script src="../dist/regionize.umd.js"></script>
+    <script src="./demo.js"></script>
+
+  </body>
+
+</html>
