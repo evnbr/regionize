@@ -1,7 +1,7 @@
 import { yieldIfNeeded } from './schedule';
 import isInsideOverflowIgnoringElement from './ignoreOverflow';
 import { AppendStatus, AppendResult } from './types';
-import { nextWordEnd, previousWordEnd } from './stringUtils';
+import { nextWordEnd, previousWordEnd, isAllWhitespace } from './stringUtils';
 
 type Checker = () => boolean;
 
@@ -51,9 +51,8 @@ const addTextUntilOverflow = async (
   // Back out to word boundary
   const wordEnd = previousWordEnd(originalText, proposedEnd);
   const fittingText = originalText.substr(0, wordEnd);
-  const isAllWhitespace = fittingText.trim() === '';
 
-  if (wordEnd < 1 || isAllWhitespace) {
+  if (wordEnd < 1 || isAllWhitespace(fittingText)) {
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     container.removeChild(textNode);

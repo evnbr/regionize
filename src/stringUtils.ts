@@ -1,5 +1,7 @@
 const SPACE = ' ';
 
+const isAllWhitespace = (text: string) => text.trim() === '';
+
 const nextWordEnd = (text: string, startIndex: number): number => {
   let newIndex = startIndex + 1;
 
@@ -29,4 +31,4 @@ const previousWordEnd = (text: string, startIndex: number): number => {
   return newIndex;
 };
 
-export { nextWordEnd, previousWordEnd };
+export { nextWordEnd, previousWordEnd, isAllWhitespace };

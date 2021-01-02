@@ -159,14 +159,14 @@ class FlowManager {
 
     const hasOverflowed = region.hasOverflowed();
     if (hasOverflowed && !this.canSplit(element, region)) {
-      // If we can't clear and traverse children, we already
-      // know it doesn't fit.
-      // TODO: Should we remove it?
+      // If we can't clear and traverse children, we already know it doesn't fit.
+      // TODO: Should we explicitly remove it?
       return { status: AppendStatus.ADDED_NONE };
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
-      // clear this element
+      // Clear the element. The child nodes will either
+      // be added back to this element or added to a new remainder.
       const remainingChildNodes = [...element.childNodes];
       element.innerHTML = '';
 
@@ -182,15 +182,14 @@ class FlowManager {
       // Start adding childNodes, when we overflow, assemble a cloned
       // element that contains the remainder childNodes and return.
       while (remainingChildNodes.length > 0) {
-        const child = remainingChildNodes.shift()!; // TODO: do we need to use shift()?
+        // pop the first child off. TODO: should we use shift()?
+        const child = remainingChildNodes.shift()!;
 
         let childResult: AppendResult;
 
         if (isTextNode(child)) {
-          // Figure out how much text fits
           childResult = await this.addText(child, element, region);
         } else if (isContentElement(child)) {
-          // Recursively add
           childResult = await this.addElement(child, region, element);
         } else {
           // Skip comments, script tags, and unknown nodes
@@ -201,27 +200,31 @@ class FlowManager {
           continue;
         }
 
-        // TODO: need to better check if element would be empty, or
-        // is splittable, when creating the remainder
+        if (
+          childResult.status === AppendStatus.ADDED_NONE
+          && element.childNodes.length == 0
+        ) {
+          // If we reach here, we know the element did fit when empty, but 
+          // rejected when it contains any portion of its first child.
+          // This should be treated the same as if it didn't fit when empty—
+          // reject entirely and start in the next region.
 
-        if (childResult.status === AppendStatus.ADDED_NONE && element.childNodes.length == 0) {
-          // If it doesn't fit with any of the first child, make sure to restore
-          // the children before rejecting.
+          // Make sure to restore the children before rejecting.
           // TODO: keep in sync with line 176?
-          element.append(child);
+          element.append(child, ...remainingChildNodes);
           return {
             status: AppendStatus.ADDED_NONE,
-          };    
+          };
         }
 
-        // If we reach here, we have a partial fit. Create a remainder element
+        // If we reach here, at least part of the element has been added
+        // successfully to the current region. Create a new remainder element
         // that can be added to the next region.
         const remainder = cloneWithoutChildren(element);
 
         if (childResult.status === AppendStatus.ADDED_NONE) {
           remainder.append(child, ...remainingChildNodes);
         }
-        if (childResult.remainder) {
         if (childResult.status === AppendStatus.ADDED_PARTIAL) {
           remainder.append(childResult.remainder, ...remainingChildNodes);
         }
@@ -262,7 +265,6 @@ class FlowManager {
     initialRegion: Region,
   ) {
     const result = await this.addElement(content, initialRegion);
-    if (result.remainder && isContentElement(result.remainder)) {
     if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
       const nextRegion = this.config.createRegion();
       await this.addElementAcrossRegions(result.remainder, nextRegion);
