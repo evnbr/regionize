@@ -15,6 +15,7 @@ const preserveTableColumns = (
   for (let i = currentCellIndex - 2; i >= 0; i -= 1) {
     const origCell = originalRowCells[i];
     if (origCell) {
+      // TODO: should add events be triggered for these?
       const continuedCell = deepClone(origCell);
       remainder.prepend(continuedCell);
     }

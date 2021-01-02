@@ -1,4 +1,4 @@
-import { flowIntoRegions } from '../flowIntoRegions';
+import { flowIntoRegions } from '../index';
 import { h, div, span, p, section } from './dom-test-helper';
 import MockRegion from './MockRegion';
 import type Region from '../Region';

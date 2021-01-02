@@ -1,8 +1,6 @@
 class Region {
   element: HTMLElement;
   private measurementWrapper: HTMLElement;
-  previousRegion?: Region;
-  nextRegion?: Region;
 
   constructor(el: HTMLElement) {
     this.element = el;

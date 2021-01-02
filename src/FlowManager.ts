@@ -13,11 +13,16 @@ import { isSplitAcrossRegions, setIsSplitAcrossRegions } from './isSplit';
 import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
 import Region from './Region';
+import shouldIgnoreOverflow from './ignoreOverflow';
 
 const noop = () => {};
 const asyncNoop = (async () => noop());
 const always = () => true;
 const never = () => false;
+
+const createRegionFallback = () => {
+  throw Error('createRegion not specified');
+}
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
@@ -27,10 +32,8 @@ class FlowManager {
   config: RegionizeConfig;
 
   constructor(opts: Partial<RegionizeConfig>) {
-    if (!opts.createRegion) throw Error('createRegion not specified');
-
     this.config = {
-      createRegion: opts.createRegion,
+      createRegion: opts.createRegion ?? createRegionFallback,
       shouldTraverse: opts.shouldTraverse ?? never,
       onProgress: opts.onProgress ?? noop,
       onDidSplit: opts.onDidSplit ?? noop,
@@ -60,25 +63,26 @@ class FlowManager {
   }
 
   private applySplitRules(original: HTMLElement, remainder: HTMLElement) {
+
+    const cloneWithRules = (el: HTMLElement): HTMLElement => {
+      const clone = cloneWithChildren(el); // could be th > h3 > span;
+      this.applySplitRules(el, clone);
+      return clone;  
+    };
+
     if (original.matches('ol')) {
       orderedListRule(original, remainder);
     }
     if (original.matches('tr')) {
-      tableRowRule(original, remainder, this.deepCloneWithRules.bind(this));
+      tableRowRule(original, remainder, cloneWithRules);
     }
     setIsSplitAcrossRegions(remainder);
     this.config.onDidSplit(
       original,
       remainder,
       remainder.firstElementChild as HTMLElement,
-      this.deepCloneWithRules,
+      cloneWithRules,
     );
-  }
-
-  private deepCloneWithRules(el: HTMLElement): HTMLElement {
-    const clone = cloneWithChildren(el); // could be th > h3 > span;
-    this.applySplitRules(el, clone);
-    return clone;
   }
 
   private canSplit(element: HTMLElement, region: Region): boolean {
@@ -94,41 +98,20 @@ class FlowManager {
     return true;
   }
 
-  private shouldIgnoreOverflow(element: HTMLElement): boolean {
-    // Walk up the tree to see if we are within
-    // an overflow-ignoring node
-    if (element.hasAttribute('data-ignore-overflow')) {
-      return true;
-    }
-    if (element.parentElement) {
-      return this.shouldIgnoreOverflow(element.parentElement);
-    }
-    return false;
-  }
-
   private shouldTraverseChildren(element: HTMLElement): boolean {
     if (element.querySelector('img')) {
-      // Since ensureImageLoaded() is only called when traversing, the size of the image may not be known yet. Checking for overflow
-      // will not accurate, so traverse to be safe.
+      // Since ensureImageLoaded() is only called when traversing, the size of the image may not be known yet.
+      // Checking for overflow will not accurate, so traverse to be safe.
       // TODO: Could optimize this to instead call ensureImageLoaded earlier
       return true;
     }
     if (this.config.shouldTraverse(element)) {
-      // The region size could change as a result of traversing the elements, for example if a footnote would
-      // be added that eats into the available space for content. If so, checking for overflow is not accurate.
+      // The caller has indicated the region size could change as a result of traversing the elements,
+      // for example if a footnote would be added that eats into the available space for content.
+      // If so, checking for overflow is not accurate.
       return true;
     }
     return false;
-  }
-
-  private createRegion(previousRegion?: Region) {
-    const newRegion = this.config.createRegion();
-
-    if (previousRegion) {
-      previousRegion.nextRegion = newRegion;
-      newRegion.previousRegion = previousRegion;
-    }
-    return newRegion;
   }
 
   private async ensureImageLoaded(img: HTMLImageElement) {
@@ -141,7 +124,7 @@ class FlowManager {
   private async addText(textNode: Text, parent: HTMLElement, region: Region) {
     const shouldSplitText =
       this.config.canSplit(parent) &&
-      !this.shouldIgnoreOverflow(parent);
+      !shouldIgnoreOverflow(parent);
 
     if (shouldSplitText) {
       return await addTextUntilOverflow(textNode, parent, () =>
@@ -187,7 +170,7 @@ class FlowManager {
       const remainingChildNodes = [...element.childNodes];
       element.innerHTML = '';
 
-      if (region.hasOverflowed() && !this.shouldIgnoreOverflow(element)) {
+      if (region.hasOverflowed() && !shouldIgnoreOverflow(element)) {
         // If it doesn't fit when empty, make sure to restore
         // the children before rejecting.
         element.append(...remainingChildNodes);
@@ -218,7 +201,7 @@ class FlowManager {
           continue;
         }
 
-        // If we reach here, not everything fit. Create a remainder element
+        // If we reach here, we have a partial fit. Create a remainder element
         // that can be added to the next region.
         const remainder = cloneWithoutChildren(element);
 
@@ -254,7 +237,7 @@ class FlowManager {
       content.querySelectorAll('*').length,
     );
 
-    const firstRegion = this.createRegion();
+    const firstRegion = this.config.createRegion();
     await this.addElementAcrossRegions(content, firstRegion);
 
     this.emitProgress('done');
@@ -266,32 +249,12 @@ class FlowManager {
   ) {
     const result = await this.addElement(content, initialRegion);
     if (result.remainder && isContentElement(result.remainder)) {
-      const nextRegion = this.createRegion(initialRegion);
+      const nextRegion = this.config.createRegion();
       await this.addElementAcrossRegions(result.remainder, nextRegion);
     }
   }
 }
 
-const flowIntoRegions = async (
-  content: HTMLElement,
-  opts: Partial<RegionizeConfig>,
-): Promise<void> => {
-  if (!content) throw Error('content not specified');
 
-  const flowManager = new FlowManager(opts);
-  await flowManager.addAcrossRegions(content);
-};
 
-const addUntilOverflow = async (
-  content: HTMLElement,
-  container: HTMLElement,
-  opts: Partial<RegionizeConfig>,
-): Promise<AppendResult> => {
-  if (!content) throw Error('content not specified');
-
-  const region = new Region(container);
-  const flowManager = new FlowManager(opts);
-  return await flowManager.addElement(content, region);
-};
-
-export { addUntilOverflow, flowIntoRegions };
+export default FlowManager;
