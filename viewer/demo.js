@@ -3,6 +3,7 @@ const { addUntilOverflow } = window.Regionize;
 const paragraphContent = document.querySelector('#paragraph-content').content;
 const listContent = document.querySelector('#list-content').content;
 const nestedContent = document.querySelector('#nested-content').content;
+const traverseContent = document.querySelector('#traverse-content').content;
 
 const items = [
   {
@@ -18,9 +19,9 @@ const items = [
     desc: 'Using onDidSplit to hide the duplicate indent',
     contentFrag: paragraphContent,
     config: {
-      onDidSplit: (orig, remainder) => {
+      onDidSplit: (el, remainder) => {
         remainder.style.textIndent = 0;
-      },    
+      },
     },
   },
   {
@@ -36,7 +37,7 @@ const items = [
     desc: 'Using onDidSplit to hide the duplicate number',
     contentFrag: listContent,
     config: {
-      onDidSplit: (orig, remainder) => {
+      onDidSplit: (el, remainder) => {
         if (remainder.matches('li')) {
           remainder.style.listStyle = 'none';
         }
@@ -62,17 +63,73 @@ const items = [
   {
     id: 'nest2',
     name: 'Styling a split graphical element',
-    desc: 'Using onDidSplit to zero out padding and borders. Note that onDidSplit runs after the split point has been determined— you can make arbitrary style changes, but adjusting the space available for text will not reflow.',
+    desc: 'Using onDidSplit to zero out padding and borders. Note that onDidSplit runs after the split point has been determined— you can make arbitrary style changes, including adjusting the space available for content, but content will not reflow.',
     contentFrag: nestedContent,
     config: {
-      onDidSplit: (orig, remainder) => {
-        if (orig.matches('.bordered')) {
-          orig.style.borderBottom = 'none';
-          orig.style.paddingBottom = 0;
-          orig.style.marginBottom = 0;
+      onDidSplit: (el, remainder) => {
+        if (el.matches('.bordered')) {
+          el.style.borderBottom = 'none';
+          el.style.paddingBottom = 0;
+          el.style.marginBottom = 0;
           remainder.style.borderTop = 'none';
           remainder.style.paddingTop = 0;
           remainder.style.marginTop = 0;
+        }
+      },
+    },
+  },
+  {
+    id: 'traverse1',
+    name: 'Optimization: Doesn\'t traverse elements if their parent fits',
+    desc: 'Note that onAdd is never called on the first inner element, since the first box fit in one go. The second box is traversed to find a good breaking point.',
+    contentFrag: traverseContent,
+    config: {
+      onDidAdd: (el) => {
+        if (el.matches('.inner')) {
+          el.style.backgroundColor = 'yellow';
+        }
+      },
+    },
+  },
+  {
+    id: 'traverse3',
+    name: 'Using shouldTraverse to override the above',
+    desc: 'We can de-optimize and force traversal of every inner element',
+    contentFrag: traverseContent,
+    config: {
+      shouldTraverse: el => true,
+      onDidAdd: (el) => {
+        if (el.matches('.inner')) {
+          el.style.backgroundColor = 'yellow';
+        }
+      },
+    },
+  },
+  {
+    id: 'traverse2',
+    name: 'Optimization: Doesn\'t traverse elements if their parent can\'t split',
+    desc: 'Note that onAdd is not called on either of the inner elements. Since its parent is not splittable, the contents are skipped over as an optimization',
+    contentFrag: traverseContent,
+    config: {
+      canSplit: el => !el.matches('.bordered'),
+      onDidAdd: (el) => {
+        if (el.matches('.inner')) {
+          el.style.backgroundColor = 'yellow';
+        }
+      },
+    },
+  },
+  {
+    id: 'traverse4',
+    name: 'Using shouldTraverse to override the above',
+    desc: 'We can de-optimize here as well, and canSplit is still respected. (Note that the second inner item will only be traversed when it is added to its own region, and so isn\'t yellow here.)',
+    contentFrag: traverseContent,
+    config: {
+      shouldTraverse: el => true,
+      canSplit: el => !el.matches('.bordered'),
+      onDidAdd: (el) => {
+        if (el.matches('.inner')) {
+          el.style.backgroundColor = 'yellow';
         }
       },
     },
@@ -92,7 +149,7 @@ const prettyPrintConfig = (obj) => {
   const lines = Object
     .keys(obj)
     .map(k => `  ${k}: ${reducedIndent(obj[k])}`);
-  return lines.length ? `{\n${lines.join('\n')}\n}` : '{}';
+  return lines.length ? `{\n${lines.join(',\n')}\n}` : '{}';
 };
 
 const isNode = input => !!input && input.nodeType;
@@ -138,10 +195,11 @@ const setup = async ({ id, name, desc, contentFrag, config }) => {
 
   document.body.append(item);
 
-  const region = item.querySelector('.region');
-  const remainderRegion = item.querySelector('.remainder');
-  const result = await addUntilOverflow(content.cloneNode(true), region, config);
-  remainderRegion.append(result.remainder ? result.remainder : '[No remainder]');
+  const container = item.querySelector('.region');
+  const remainderContainer = item.querySelector('.remainder');
+
+  const result = await addUntilOverflow(content.cloneNode(true), container, config);
+  remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
 };
 
 items.forEach(setup);

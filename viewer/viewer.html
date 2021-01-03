@@ -5,7 +5,11 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Regionize test cases</h1>
+    <h1>Regionize</h1>
+    <p>
+      This page demonstrates the core features of <a href="https://github.com/evnbr/regionize">Regionize.js</a>. The rendered HTML is also snapshotted 
+      and checked as part of the test suite.
+    </p>
 
     <template id="paragraph-content">
       <h3>Heading</h3>
@@ -25,19 +29,19 @@
     <template id="list-content">
       <h3>List heading</h3>
       <ol>
-        <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
-        <li>Integer nec odio. Praesent libero.</li>
-        <li>Sed cursus ante dapibus diam. Sed nisi.</li>
+        <li>Firstly, lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
+        <li>Secondly, integer nec odio. Praesent libero.</li>
+        <li>Thirdly, sed cursus ante dapibus.</li>
         <li>
-          Pellentesque habitant morbi tristique senectus et netus et malesuada
+          Fourthly, pellentesque habitant morbi tristique senectus et netus et malesuada
           fames ac turpis egestas.
         </li>
         <li>
-          Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, 
+          Fifthly, vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, 
           ante. Donec eu libero sit amet quam egestas semper
         </li>
-        <li>Aenean ultricies mi vitae est.</li>
-        <li>Duis sagittis ipsum. Praesent libero. </li>
+        <li>Sixthly, aenean ultricies mi vitae est.</li>
+        <li>Seventhly, duis sagittis ipsum. Praesent libero. </li>
       </ol>
     </template>
 
@@ -54,11 +58,29 @@
           </div>    
         </div>  
         <div class="bordered">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-          Integer nec odio. Praesent libero.
+          A top level boxed item, consectetur adipiscing elit.
+          Integer nec odio.
         </div>    
       </div>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      More content not boxed, consectetur adipiscing elit.
+    </template>
+
+    <template id="traverse-content">
+      <h3>Traverse heading</h3>
+      <div class="bordered">
+        Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Integer nec odio. Praesent libero.
+        <div class="bordered inner">
+          Inner content, maybe a footnote.
+        </div>    
+      </div>
+      <div class="bordered">
+        <div class="bordered inner">
+          Inner content, maybe a footnote.
+        </div>    
+        Another boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Integer nec odio. Praesent libero.
+      </div>
     </template>
 
 

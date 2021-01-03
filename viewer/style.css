@@ -99,6 +99,19 @@ body {
   padding: 4px 8px;
 }
 
+
+.region {
+  border: 1px solid var(--blue);
+  background: white;
+  height: 300px;
+}
+
+.remainder {
+  border: 1px dashed var(--red);
+}
+
+/* Content styling */
+
 .content p {
   margin: 0;
   text-indent: 1em;
@@ -121,15 +134,3 @@ body {
 .content .bordered .bordered .bordered {
   border: 6px double;
 }
-
-.region {
-  border: 1px solid var(--blue);
-  background: white;
-  height: 300px;
-}
-
-.remainder {
-  border: 1px solid var(--red);
-  background: white;
-}
-
