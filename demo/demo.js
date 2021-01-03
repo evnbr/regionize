@@ -4,6 +4,7 @@ const paragraphContent = document.querySelector('#paragraph-content').content;
 const listContent = document.querySelector('#list-content').content;
 const nestedContent = document.querySelector('#nested-content').content;
 const traverseContent = document.querySelector('#traverse-content').content;
+const orphanContent = document.querySelector('#orphan-heading-content').content;
 
 const items = [
   {
@@ -132,6 +133,18 @@ const items = [
           el.style.backgroundColor = 'yellow';
         }
       },
+    },
+  },
+  {
+    id: 'orpahn',
+    name: 'Orphaned heading',
+    desc: 'blah',
+    contentFrag: orphanContent,
+    config: {
+      canSplit: (el) => {
+        // TODO: must be followed by paragraph
+        return true;
+      }
     },
   },
 ];

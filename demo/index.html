@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>Regionize test cases</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <h1>Regionize</h1>
     <p>
-      This page demonstrates the core features of <a href="https://github.com/evnbr/regionize">Regionize.js</a>. The rendered HTML is also snapshotted 
-      and checked as part of the test suite.
+      This page demonstrates the core features of <a href="https://github.com/evnbr/regionize">Regionize.js</a>.
+      This page is also snapshotted as part of the test suite.
     </p>
 
     <template id="paragraph-content">
-      <h3>Heading</h3>
+      <h3>Paragraphs</h3>
       <p>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
         Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
@@ -27,7 +28,7 @@
     </template>
 
     <template id="list-content">
-      <h3>List heading</h3>
+      <h3>List Items</h3>
       <ol>
         <li>Firstly, lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
         <li>Secondly, integer nec odio. Praesent libero.</li>
@@ -46,7 +47,7 @@
     </template>
 
     <template id="nested-content">
-      <h3>Nested heading</h3>
+      <h3>Nested Boxes</h3>
       <div class="bordered">
         Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
         Integer nec odio. Praesent libero.
@@ -66,7 +67,7 @@
     </template>
 
     <template id="traverse-content">
-      <h3>Traverse heading</h3>
+      <h3>Stacked Boxes</h3>
       <div class="bordered">
         Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
         Integer nec odio. Praesent libero.
@@ -81,6 +82,53 @@
         Another boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
         Integer nec odio. Praesent libero.
       </div>
+    </template>
+
+    <template id="orphan-heading-content">
+      <h3>First Paragraph</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante.
+      </p>
+      <h3>Second Paragraph</h3>
+      <p>
+        Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+        turpis egestas.
+      </p>
+    </template>
+
+    <template id="orphan-content">
+      <h3>Orphan</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper.
+      </p>
+      <p>
+        Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+        turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+        mi vitae est. Mauris placerat eleifend leo.
+      </p>
+    </template>
+
+    <template id="widow-content">
+      <h3>Widow</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper.
+      </p>
+      <p>
+        Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+        turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+        mi vitae est. Mauris placerat eleifend leo.
+      </p>
     </template>
 
 

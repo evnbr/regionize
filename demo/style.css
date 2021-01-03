@@ -5,7 +5,7 @@
 }
 
 :root {
-  font: 14px/1.5 system-ui;
+  font: 14px/1.5 system-ui, -apple-system;
   background: #f4f4f4;
 
   --bg: #f4f4f4;
@@ -120,6 +120,11 @@ body {
 .content li {
   margin-left: 1.5em;
 }
+
+.content p + h3 {
+  margin-top: 1em;
+}
+
 
 .content .bordered {
   padding: 4px 8px;
