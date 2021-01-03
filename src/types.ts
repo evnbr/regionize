@@ -1,5 +1,3 @@
-import type Region from './Region';
-
 export type ElementChecker = (el: HTMLElement) => boolean;
 
 export const enum AppendStatus {
@@ -18,8 +16,6 @@ type PartialNodeAppendResult = {
 }
 
 export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
-
-
 
 export type AsyncRuleApplier = (el: HTMLElement) => Promise<any> | undefined;
 
@@ -40,8 +36,14 @@ export interface RegionizeProgressEvent {
   imageWaitTime?: number;
 }
 
+export interface OverflowDetectingContainer {
+  readonly element: HTMLElement;
+  append(...nodes: (string | Node)[]): void;
+  hasOverflowed(): boolean;
+}
+
 export interface RegionizeConfig {
-  createRegion: () => Region;
+  getNextContainer: () => OverflowDetectingContainer;
   onDidSplit: SplitRuleApplier;
   canSplit: ElementChecker;
   shouldTraverse: ElementChecker;

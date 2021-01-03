@@ -1,4 +1,6 @@
-class Region {
+import { OverflowDetectingContainer } from './types';
+
+class Region implements OverflowDetectingContainer {
   element: HTMLElement;
   private measurementWrapper: HTMLElement;
 
@@ -20,6 +22,7 @@ class Region {
     return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
 
+  // TODO: do we still need this?
   isReasonableSize(): boolean {
     const box = this.element.getBoundingClientRect();
     return box.height > 100 && box.width > 100; // TODO: Number is arbitrary

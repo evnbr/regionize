@@ -1,10 +1,11 @@
+import { OverflowDetectingContainer } from '../types';
 import { div } from './dom-test-helper';
 
 // Fake version of a Region, that allows the caller to simulate
 // an overflow. For use in tests (on node w/ JSDom, where
 // getBoundingClientRect and offsetHeight aren't available)
 
-class MockRegion {
+class OverflowSimulator implements OverflowDetectingContainer {
   isReasonableSize = true;
   element = div({ className: 'box' });
   content = div({ className: 'content' });
@@ -27,4 +28,4 @@ class MockRegion {
   }
 }
 
-export default MockRegion;
+export default OverflowSimulator;

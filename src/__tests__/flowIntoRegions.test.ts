@@ -1,7 +1,7 @@
 import { flowIntoRegions } from '../index';
+import { OverflowDetectingContainer } from '../types';
 import { h, div, span, p, section } from './dom-test-helper';
-import MockRegion from './MockRegion';
-import type Region from '../Region';
+import OverflowSimulator from './OverflowSimulator';
 
 let time = 0;
 (global as any).performance = {
@@ -20,14 +20,14 @@ const allText = (regions: any) =>
 test('Preserves content order (10char overflow)', async () => {
   const a = div('A content.', p('B content.', span('C content.')));
 
-  const regions: MockRegion[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => el.textContent!.length > 10);
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 10);
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
-  await flowIntoRegions(a, { createRegion });
+  await flowIntoRegions(a, { getNextContainer });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -37,14 +37,14 @@ test('Splits a single div over many pages (10char overflow)', async () => {
   const content = div();
   content.textContent = 'A content. B content. C content.';
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => el.textContent!.length > 10);
+  const regions: OverflowSimulator[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 10);
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
-  await flowIntoRegions(content, { createRegion });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -68,14 +68,14 @@ test('Split elements over many pages (100char overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => el.textContent!.length > 100);
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
-  await flowIntoRegions(content, { createRegion });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
@@ -96,17 +96,17 @@ test('Split elements over many pages (5children overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => {
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => {
       const count = (el.querySelectorAll('*') || []).length;
       return count > 5;
     });
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
-  await flowIntoRegions(content, { createRegion });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
@@ -124,14 +124,14 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   }
 
   const canSplit = (el: HTMLElement) => !el.matches('p');
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => el.textContent!.length > 100);
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
-  await flowIntoRegions(content, { createRegion, canSplit });
+  await flowIntoRegions(content, { getNextContainer, canSplit });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
@@ -157,18 +157,18 @@ test("Shifts appropriate parent if can't split", async () => {
     splittableWrap.append(el);
   }
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = new MockRegion(el => {
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => {
       const count = (el.querySelectorAll('*') || []).length;
       return count > 5;
     });
     regions.push(r);
-    return r as unknown as Region;
+    return r;
   };
 
   const content = div(splittableWrap);
-  await flowIntoRegions(content, { createRegion });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
@@ -224,8 +224,8 @@ test('Throws Errors when missing required parameters', async () => {
   expect(
     (async () => {
       await flowIntoRegions(document.createElement('div'), {
-        createRegion: () => {
-          return new MockRegion(() => true);
+        getNextContainer: () => {
+          return new OverflowSimulator(() => true);
         },
       } as any);
     })(),

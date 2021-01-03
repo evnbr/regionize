@@ -1,20 +1,21 @@
 import { flowIntoRegions } from '../index';
 import { ol, li } from './dom-test-helper';
-import MockRegion from './MockRegion';
+import OverflowSimulator from './OverflowSimulator';
 import type Region from '../Region';
+import { OverflowDetectingContainer } from '../types';
 
 describe('Ordered Lists', () => {
   test('Numbering continues on next page', async () => {
     const list = ol(li('item 1'), li('item 2'), li('item 3'));
 
-    const regions: MockRegion[] = [];
-    const createRegion = () => {
-      const r = new MockRegion(el => el.querySelectorAll('li').length > 1);
+    const regions: OverflowDetectingContainer[] = [];
+    const getNextContainer = () => {
+      const r = new OverflowSimulator(el => el.querySelectorAll('li').length > 1);
       regions.push(r);
-      return r as unknown as Region;
+      return r;
     };
 
-    await flowIntoRegions(list, { createRegion });
+    await flowIntoRegions(list, { getNextContainer });
 
     expect(regions.length).toBe(3);
     expect(regions[0].element.textContent).toBe('item 1');
@@ -36,14 +37,14 @@ describe('Ordered Lists', () => {
   test('Numbering is not incremented when a single list element continues on next page(s)', async () => {
     const list = ol(li('item 1 that is long,'), li('li2'));
 
-    const regions: MockRegion[] = [];
-    const createRegion = () => {
-      const r = new MockRegion(el => el.textContent.length > 10);
+    const regions: OverflowDetectingContainer[] = [];
+    const getNextContainer = () => {
+      const r = new OverflowSimulator(el => el.textContent.length > 10);
       regions.push(r);
-      return r as unknown as Region;
+      return r;
     };
 
-    await flowIntoRegions(list, { createRegion });
+    await flowIntoRegions(list, { getNextContainer });
 
     expect(regions.length).toBe(3);
     expect(regions[0].element.textContent.trim()).toBe('item 1');
@@ -65,14 +66,14 @@ describe('Ordered Lists', () => {
     const list = ol(li('item 1'), li('item 2'), li('item 3'));
     list.setAttribute('start', '5');
 
-    const regions: MockRegion[] = [];
-    const createRegion = () => {
-      const r = new MockRegion(el => el.querySelectorAll('li').length > 2);
+    const regions: OverflowDetectingContainer[] = [];
+    const getNextContainer = () => {
+      const r = new OverflowSimulator(el => el.querySelectorAll('li').length > 2);
       regions.push(r);
-      return r as unknown as Region;
+      return r;
     };
 
-    await flowIntoRegions(list, { createRegion });
+    await flowIntoRegions(list, { getNextContainer });
 
     expect(regions.length).toBe(2);
 

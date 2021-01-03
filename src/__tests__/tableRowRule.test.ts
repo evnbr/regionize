@@ -1,7 +1,8 @@
 import { flowIntoRegions } from '../index';
 import { table, tr, td } from './dom-test-helper';
-import MockRegion from './MockRegion';
+import OverflowSimulator from './OverflowSimulator';
 import type Region from '../Region';
+import { OverflowDetectingContainer } from '../types';
 
 describe('Table rows', () => {
   test('Cloned table row continues first column', async () => {
@@ -9,19 +10,19 @@ describe('Table rows', () => {
       tr(td('r1 cell 1,'), td('r1 cell 2,'), td('r1 cell 3, more,'), td('r1 cell 4')),
     );
 
-    const regions: MockRegion[] = [];
-    const createRegion = () => {
-      const r = new MockRegion(el => {
+    const regions: OverflowDetectingContainer[] = [];
+    const getNextContainer = () => {
+      const r = new OverflowSimulator(el => {
         // overflow if any cell has more than N char
         return [...el.querySelectorAll('td')]
           .map(d => d.textContent.length > 12)
           .reduce((a, b) => a || b, false);
       });
       regions.push(r);
-      return r as unknown as Region;
+      return r;
     };
 
-    await flowIntoRegions(tbl, { createRegion });
+    await flowIntoRegions(tbl, { getNextContainer });
 
     expect(regions.length).toBe(2);
     expect(regions[0].element.textContent).toBe('r1 cell 1,r1 cell 2,r1 cell 3,');

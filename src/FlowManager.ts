@@ -1,9 +1,4 @@
-import {
-  RegionizeConfig,
-  AppendStatus,
-  AppendResult,
-  ProgressEventName,
-} from './types';
+import { RegionizeConfig, AppendStatus, AppendResult, ProgressEventName, OverflowDetectingContainer } from './types';
 import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
 
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
@@ -12,7 +7,6 @@ import orderedListRule from './orderedListRule';
 import { isSplitAcrossRegions, setIsSplitAcrossRegions } from './isSplit';
 import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
-import Region from './Region';
 import shouldIgnoreOverflow from './ignoreOverflow';
 
 const noop = () => {};
@@ -28,16 +22,16 @@ const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
 class FlowManager {
-  estimator?: ProgressEstimator;
+  estimator?: ProgressEstimator; // initialized in addAcrossRegions
   config: RegionizeConfig;
 
   constructor(opts: Partial<RegionizeConfig>) {
     this.config = {
-      createRegion: opts.createRegion ?? createRegionFallback,
+      getNextContainer: opts.getNextContainer ?? createRegionFallback,
       shouldTraverse: opts.shouldTraverse ?? never,
+      canSplit: opts.canSplit ?? always,
       onProgress: opts.onProgress ?? noop,
       onDidSplit: opts.onDidSplit ?? noop,
-      canSplit: opts.canSplit ?? always,
       onWillAdd: opts.onWillAdd ?? asyncNoop,
       onDidRemove: opts.onDidRemove ?? asyncNoop,
       onDidAdd: opts.onDidAdd ?? asyncNoop,
@@ -85,7 +79,7 @@ class FlowManager {
     );
   }
 
-  private canSplit(element: HTMLElement, region: Region): boolean {
+  private canSplit(element: HTMLElement, region: OverflowDetectingContainer): boolean {
     if (!this.config.canSplit(element)) {
       return false;
     }
@@ -102,7 +96,7 @@ class FlowManager {
     if (element.querySelector('img')) {
       // Since ensureImageLoaded() is only called when traversing, the size of the image may not be known yet.
       // Checking for overflow will not accurate, so traverse to be safe.
-      // TODO: Could optimize this to instead call ensureImageLoaded earlier
+      // TODO: Could optimize this to instead call ensureImageLoaded earlier?
       return true;
     }
     if (this.config.shouldTraverse(element)) {
@@ -121,10 +115,8 @@ class FlowManager {
     this.emitProgress('inProgress');
   }
 
-  private async addText(textNode: Text, parent: HTMLElement, region: Region) {
-    const shouldSplitText =
-      this.config.canSplit(parent) &&
-      !shouldIgnoreOverflow(parent);
+  private async addText(textNode: Text, parent: HTMLElement, region: OverflowDetectingContainer) {
+    const shouldSplitText = this.canSplit(parent, region) && !shouldIgnoreOverflow(parent);
 
     if (shouldSplitText) {
       return await addTextUntilOverflow(textNode, parent, () =>
@@ -139,16 +131,16 @@ class FlowManager {
 
   async addElement(
     element: HTMLElement,
-    region: Region,
-    parentEl?: HTMLElement,
+    parentEl: HTMLElement | undefined,
+    region: OverflowDetectingContainer,
   ): Promise<AppendResult> {
     // Ensure images are loaded before adding and testing for overflow
     if (isUnloadedImage(element)) {
       await this.ensureImageLoaded(element);
     }
 
-    // Transforms before adding. Be sure to only apply this once per
-    // element, and not when inserting the remainder of the element
+    // Transforms before adding. Only applied once at the beginning of each
+    // element, and not when inserting the remainder of the element.
     if (!isSplitAcrossRegions(element)) {
       await this.config.onWillAdd(element);
     }
@@ -173,7 +165,10 @@ class FlowManager {
       if (region.hasOverflowed() && !shouldIgnoreOverflow(element)) {
         // If it doesn't fit when empty, make sure to restore
         // the children before rejecting.
+        element.remove();
         element.append(...remainingChildNodes);
+        this.config.onDidRemove(element);
+
         return {
           status: AppendStatus.ADDED_NONE,
         };
@@ -190,7 +185,7 @@ class FlowManager {
         if (isTextNode(child)) {
           childResult = await this.addText(child, element, region);
         } else if (isContentElement(child)) {
-          childResult = await this.addElement(child, region, element);
+          childResult = await this.addElement(child, element, region);
         } else {
           // Skip comments, script tags, and unknown nodes
           continue;
@@ -211,7 +206,10 @@ class FlowManager {
 
           // Make sure to restore the children before rejecting.
           // TODO: keep in sync with line 176?
+          element.remove();
           element.append(child, ...remainingChildNodes);
+          this.config.onDidRemove(element);
+
           return {
             status: AppendStatus.ADDED_NONE,
           };
@@ -238,9 +236,9 @@ class FlowManager {
       }
     }
 
-    // We added this entire element without overflowing the region.
-    await this.config.onDidAdd(element);
+    // We finished adding this entire element without overflowing the region.
 
+    await this.config.onDidAdd(element);
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
 
@@ -249,24 +247,26 @@ class FlowManager {
     };
   }
 
+  // Wraps addElementAcrossRegions with an estimator for convenience
   async addAcrossRegions(content: HTMLElement): Promise<void> {
     this.estimator = new ProgressEstimator(
       content.querySelectorAll('*').length,
     );
 
-    const firstRegion = this.config.createRegion();
+    const firstRegion = this.config.getNextContainer();
     await this.addElementAcrossRegions(content, firstRegion);
 
     this.emitProgress('done');
   }
 
+  // Keeps calling itself until there's no more content
   private async addElementAcrossRegions(
     content: HTMLElement,
-    initialRegion: Region,
+    initialRegion: OverflowDetectingContainer,
   ) {
-    const result = await this.addElement(content, initialRegion);
+    const result = await this.addElement(content, undefined, initialRegion);
     if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
-      const nextRegion = this.config.createRegion();
+      const nextRegion = this.config.getNextContainer();
       await this.addElementAcrossRegions(result.remainder, nextRegion);
     }
   }
