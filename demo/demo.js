@@ -4,7 +4,9 @@ const paragraphContent = document.querySelector('#paragraph-content').content;
 const listContent = document.querySelector('#list-content').content;
 const nestedContent = document.querySelector('#nested-content').content;
 const traverseContent = document.querySelector('#traverse-content').content;
-const orphanContent = document.querySelector('#orphan-heading-content').content;
+const orphanHeadingContent = document.querySelector('#orphan-heading-content').content;
+const orphanParaContent = document.querySelector('#orphan-para-content').content;
+const widowParaContent = document.querySelector('#widow-para-content').content;
 
 const items = [
   {
@@ -136,15 +138,36 @@ const items = [
     },
   },
   {
-    id: 'orpahn',
-    name: 'Orphaned heading',
-    desc: 'blah',
-    contentFrag: orphanContent,
+    id: 'orphan1',
+    name: 'Orphaned sibling',
+    desc: 'Currently, regionize does not handle keeping siblings together, ie a heading with its following paragraphs. This may be added in a future release.',
+    contentFrag: orphanHeadingContent,
     config: {
-      canSplit: (el) => {
-        // TODO: must be followed by paragraph
-        return true;
-      }
+      onDidSplit: (el, remainder) => {
+        remainder.style.textIndent = 0;
+      },
+    },
+  },
+  {
+    id: 'orphan2',
+    name: 'Orphaned paragraph line',
+    desc: 'Currently, regionize does not handle orphaned lines (the beginning line of a paragraph left behind when the rest overflows, where you may prefer to break early and overflow the entire paragraph). This may be added in a future release.',
+    contentFrag: orphanParaContent,
+    config: {
+      onDidSplit: (el, remainder) => {
+        remainder.style.textIndent = 0;
+      },
+    },
+  },
+  {
+    id: 'orphan3',
+    name: 'Widowed paragraph line',
+    desc: 'Currently, regionize does not handle widowed lines (the last line of a paragraph overflowing in a new region, where you may prefer to break early and overflow 2 lines).  This may be added in a future release.',
+    contentFrag: widowParaContent,
+    config: {
+      onDidSplit: (el, remainder) => {
+        remainder.style.textIndent = 0;
+      },
     },
   },
 ];
@@ -168,23 +191,20 @@ const prettyPrintConfig = (obj) => {
 const isNode = input => !!input && input.nodeType;
 const isString = input => !!input && typeof input === 'string';
 const isAppendable = input => isNode(input) || isString(input);
-
-
+const setAttrs = (el, attrs) => {
+  for (const [key, val] of Object.entries(attrs)) {
+    if (key in el) {
+      el[key] = val;
+    } else {
+      el.setAttribute(key, val);
+    }
+  }
+};
 const h = (tagName, ...args) => {
   const el = document.createElement(tagName);
-
   for (const arg of args) {
-    if (isAppendable(arg)) {
-      el.append(arg);
-    } else {
-      for (const [key, val] of Object.entries(arg)) {
-        if (key in el) {
-          el[key] = val;
-        } else {
-          el.setAttribute(key, val);
-        }
-      }
-    }
+    if (isAppendable(arg)) el.append(arg);
+    else setAttrs(el, arg);
   }
   return el;
 };
@@ -211,8 +231,17 @@ const setup = async ({ id, name, desc, contentFrag, config }) => {
   const container = item.querySelector('.region');
   const remainderContainer = item.querySelector('.remainder');
 
+  // console.log(`Starting ${id}`);
+
   const result = await addUntilOverflow(content.cloneNode(true), container, config);
   remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
+
+  // console.log(`Finished ${id}`);
 };
 
-items.forEach(setup);
+Promise.all(items.map(setup)).then(() => {
+  console.log('Done');
+
+  window.ALL_DONE = true;
+  // playwright: page.waitForFunction('window.ALL_DONE == true')
+});
