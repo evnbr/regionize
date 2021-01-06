@@ -38,6 +38,10 @@ body {
   padding: 12px 0 48px;
 }
 
+.item > .row {
+  margin-top: 16px;
+}
+
 .item-title a {
   color: inherit;
   text-decoration: underline;
@@ -51,7 +55,6 @@ body {
 }
 
 .row {
-  margin-top: 16px;
   display: flex;
   flex-flow: row;
 }

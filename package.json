@@ -26,10 +26,15 @@
     "babel-jest": "^22.4.4",
     "babel-plugin-const-enum": "^1.0.1",
     "babel-plugin-external-helpers": "^6.22.0",
+    "colors": "^1.4.0",
+    "diff": "^5.0.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.22.1",
     "jest": "^25.5.4",
+    "playwright": "^1.7.1",
+    "posthtml": "^0.15.1",
+    "posthtml-attrs-sorter": "^1.1.0",
     "prettier": "^1.19.1",
     "rollup": "^2.17.0",
     "rollup-plugin-babel": "^3.0.7",
@@ -46,7 +51,9 @@
     "test": "jest",
     "coverage": "jest --coverage",
     "clean": "rimraf build",
-    "test-travis": "jest && codecov"
+    "test:ci": "jest && codecov",
+    "test:e2e": "node ./demo/run-test.js",
+    "test:regen": "node ./demo/run-test.js save_snapshots"
   },
   "jest": {
     "collectCoverage": true,

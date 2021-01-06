@@ -1,0 +1,31 @@
+
+          <div>
+            <h4 class="fg-blue">Container</h4>
+            <div class="region box">
+            <div class="region-content" style="position: relative;"><div class="content box">
+            
+      <h3>Nested Boxes</h3>
+      <div class="bordered" style="border-bottom-width: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+        Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Integer nec odio. Praesent libero.
+        <div class="bordered" style="border-bottom-width: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+          Nested box item. Lorem ipsum dolor sit amet, consectetur.
+          <div class="bordered" style="border-bottom-width: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+            Doubly-nested sit amet,</div></div></div></div></div></div>
+          </div>
+          <div>
+            <h4 class="fg-red">Remainder</h4>
+            <div class="remainder box">
+            <div class="content box" data-region-split="true"><div class="bordered" data-region-split="true" style="border-top-width: 0px; padding-top: 0px; margin-top: 0px;"><div class="bordered" data-region-split="true" style="border-top-width: 0px; padding-top: 0px; margin-top: 0px;"><div class="bordered" data-region-split="true" style="border-top-width: 0px; padding-top: 0px; margin-top: 0px;"> consectetur adipiscing elit.
+            Integer nec odio.
+          </div>    
+        </div>  
+        <div class="bordered">
+          A top level boxed item, consectetur adipiscing elit.
+          Integer nec odio.
+        </div>    
+      </div>
+      More content not boxed, consectetur adipiscing elit.
+    </div></div>
+          </div>
+        
