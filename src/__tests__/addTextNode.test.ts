@@ -91,10 +91,12 @@ describe('fillUntilOverflow', () => {
         expect(textNode.nodeValue).toBe('Test');
         expect(textNode.parentNode).toBe(mockParent);
 
-        let remainder = result.remainder!;
-        expect(remainder.nodeType).toBe(Node.TEXT_NODE);
-        expect(remainder.nodeValue).toBe(' text content');
-        expect(remainder.parentNode).toBeNull();
+        if (result.status == AppendStatus.ADDED_PARTIAL) {
+          let remainder = result.remainder;
+          expect(remainder.nodeType).toBe(Node.TEXT_NODE);
+          expect(remainder.nodeValue).toBe(' text content');
+          expect(remainder.parentNode).toBeNull();
+        }
       },
     );
   });
@@ -111,10 +113,12 @@ describe('fillUntilOverflow', () => {
         expect(textNode.nodeValue).toBe('Test');
         expect(textNode.parentNode).toBe(mockParent);
 
-        let remainder = result.remainder!;
-        expect(remainder.nodeType).toBe(Node.TEXT_NODE);
-        expect(remainder.nodeValue).toBe(' text content');
-        expect(remainder.parentNode).toBeNull();
+        if (result.status == AppendStatus.ADDED_PARTIAL) {
+          let remainder = result.remainder;
+          expect(remainder.nodeType).toBe(Node.TEXT_NODE);
+          expect(remainder.nodeValue).toBe(' text content');
+          expect(remainder.parentNode).toBeNull();  
+        }
       },
     );
   });

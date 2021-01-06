@@ -13,21 +13,21 @@ const isAppendable = (input: any): input is Appendable => {
   return isNode(input) || isString(input);
 };
 
+const setAttrs = (el: Element, attrs: Object) => {
+  for (let [key, val] of Object.entries(attrs)) {
+    if (key in el) {
+      (el as any)[key] = val; // not typesafe
+    } else {
+      el.setAttribute(key, val);
+    }
+  }
+}
+
 const h = (tagName: string, ...args: (Object | Appendable)[]): HTMLElement => {
   const el = document.createElement(tagName);
-
   for (let arg of args) {
-    if (isAppendable(arg)) {
-      el.append(arg);
-    } else {
-      for (let [key, val] of Object.entries(arg)) {
-        if (key in el) {
-          (el as any)[key] = val; // not typesafe
-        } else {
-          el.setAttribute(key, val);
-        }
-      }
-    }
+    if (isAppendable(arg)) el.append(arg);
+    else setAttrs(el, arg);
   }
   return el;
 };
