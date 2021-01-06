@@ -13,41 +13,35 @@ const testCases = require('./test-cases');
 const args = process.argv.slice(2);
 const SAVE_SNAPSHOTS = !!args.length && args[0] === 'save_snapshots';
 
+const TEST_URL = `file:${path.join(__dirname, 'index.html')}`;
+
 const renderDiff = (a, b) => {
-  const diff = Diff.diffChars(a, b);
- 
+  const diff = Diff.diffTrimmedLines(a, b);
+
   diff.forEach((part) => {
-    // green for additions, red for deletions
-    // grey for common parts
     let color = 'grey';
     if (part.added) color = 'green';
     if (part.removed) color = 'red';
     process.stderr.write(part.value[color]);
   });
   process.stderr.write('\n');
-}
+};
 
 const runBrowserTest = async (b) => {
   const browserName = b.name();
-  const browser = await b.launch({
-    headless: false,
-  });
-  const context = await browser.newContext();
 
-  // Open new page
+  const browser = await b.launch({ headless: true });
+  const context = await browser.newContext();
   const page = await context.newPage();
 
-  const url = `file:${path.join(__dirname, 'index.html')}`;
-  await page.goto(url);
-
+  await page.goto(TEST_URL);
   await page.waitForFunction('window.REGIONIZE_DEMOS_ALL_DONE == true');
-
 
   for (const { id } of testCases) {
     const fileName = `./demo/snapshots/${id}.txt`;
     const htmlRaw = await page.innerHTML(`#${id} .output`);
 
-    // firefox return attributes in a different order from innerHTML, normalize first
+    // firefox innerHTML return attributes in a different order, normalize first
     const html = (await posthtml().use(attrsSorter({})).process(htmlRaw)).html;
 
     if (SAVE_SNAPSHOTS) {
@@ -65,10 +59,6 @@ const runBrowserTest = async (b) => {
     }
   }
 
-  // assert.equal(page.url(), 'http://todomvc.com/examples/react/#/completed');
-
-
-  // Close page
   await page.close();
   await context.close();
   await browser.close();

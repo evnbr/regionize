@@ -35,11 +35,12 @@ body {
 }
 
 .item {
-  padding: 12px 0 48px;
+  padding: 12px 0 56px;
 }
 
-.item > .row {
-  margin-top: 16px;
+.item-desc {
+  max-width: 640px;
+  margin-bottom: 24px;
 }
 
 .item-title a {

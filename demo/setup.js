@@ -45,7 +45,7 @@ const setup = async ({ id, name, desc, contentId, config }) => {
     'section',
     { id, className: 'item' },
     h('h2', { className: 'item-title' }, h('a', { href: `#${id}` }, name)),
-    h('p', desc),
+    h('p', { className: 'item-desc' }, desc),
     rowFragment
   );
 
