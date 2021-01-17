@@ -1,5 +1,9 @@
 # Regionize
 
+```
+⚠️ Note that the main branch is tracking a 1.0.0 refactor which is in alpha and is still being stabilized
+```
+
 [![npm](https://img.shields.io/npm/v/regionize.svg)](https://www.npmjs.com/package/regionize)
 [![Build Status](https://travis-ci.com/evnbr/regionize.svg?branch=master)](https://travis-ci.com/evnbr/regionize)
 [![codecov](https://codecov.io/gh/evnbr/regionize/branch/master/graph/badge.svg)](https://codecov.io/gh/evnbr/regionize)
