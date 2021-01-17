@@ -1,7 +1,10 @@
 # Regionize
 
 ```
-⚠️ Note that the main branch is tracking a 1.0.0 refactor which is in alpha and is still being stabilized
+⚠️ Note that the main branch is tracking a 1.0.0 refactor
+which is in alpha and is still being stabilized. Documentation
+has not been updated and refers to the 0.1.X version
+
 ```
 
 [![npm](https://img.shields.io/npm/v/regionize.svg)](https://www.npmjs.com/package/regionize)
