@@ -1,6 +1,6 @@
 {
   "name": "regionize",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-alpha.1",
   "description": "Flow HTML through multiple regions",
   "main": "dist/regionize.cjs.js",
   "module": "dist/regionize.esm.js",

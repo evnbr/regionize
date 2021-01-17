@@ -16,8 +16,9 @@ class Region implements OverflowDetectingContainer {
     this.measurementWrapper.append(...nodes);
   }
 
+  // TODO: do we still need this?
   isEmpty(): boolean {
-    const el: HTMLElement = this.measurementWrapper;
+    const el = this.measurementWrapper;
     if (el.textContent === null) return true;
     return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
@@ -31,10 +32,9 @@ class Region implements OverflowDetectingContainer {
   overflowAmount(): number {
     const contentHeight = this.measurementWrapper.offsetHeight;
     const containerHeight = this.element.offsetHeight;
-    if (containerHeight === 0)
-      throw Error(
-        'Regionizer: Trying to flow into an element with zero height.',
-      );
+    if (containerHeight === 0) {
+      throw Error('Regionize: Trying to flow into an element with zero height.');
+    }
     return contentHeight - containerHeight;
   }
 
