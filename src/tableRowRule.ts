@@ -1,19 +1,23 @@
-import { ElementCloner } from './types';
-
 const preserveTableColumns = (
   original: HTMLElement,
-  clone: HTMLElement,
-  nextChild: HTMLElement,
-  deepClone: ElementCloner,
+  remainder: HTMLElement,
+  deepClone: (el: HTMLElement) => HTMLElement,
 ): void => {
-  const columns = [...original.children] as HTMLElement[];
+  const originalRowCells = [...original.children] as HTMLElement[];
 
-  const currentIndex = columns.indexOf(nextChild);
-  for (let i = 0; i < currentIndex; i += 1) {
-    const origCol = columns[i];
-    if (origCol) {
-      const clonedCol = deepClone(origCol);
-      clone.appendChild(clonedCol);
+  const nextChild = remainder.firstElementChild;
+
+  if (!nextChild) {
+    return;
+  }
+
+  const currentCellIndex = originalRowCells.length;
+  for (let i = currentCellIndex - 2; i >= 0; i -= 1) {
+    const origCell = originalRowCells[i];
+    if (origCell) {
+      // TODO: should add events be triggered for these?
+      const continuedCell = deepClone(origCell);
+      remainder.prepend(continuedCell);
     }
   }
 };

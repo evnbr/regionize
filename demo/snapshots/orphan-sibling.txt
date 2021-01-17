@@ -1,0 +1,26 @@
+
+          <div>
+            <h4 class="fg-blue">Container</h4>
+            <div class="region box">
+            <div class="region-content" style="position: relative;"><div class="content box">
+            
+      <h3>First Paragraph</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante.
+      </p>
+      <h3>Second Paragraph</h3>
+      </div></div></div>
+          </div>
+          <div>
+            <h4 class="fg-red">Remainder</h4>
+            <div class="remainder box">
+            <div class="content box" data-region-split="true" style="text-indent: 0px;"><p>
+        Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+        turpis egestas.
+      </p>
+    </div></div>
+          </div>
+        

@@ -1,5 +1,7 @@
-import { RegionGetter } from '../types';
-import flowIntoRegions from '../flowIntoRegions';
+import { flowIntoRegions } from '../index';
+import { OverflowDetectingContainer } from '../types';
+import { h, div, span, p, section } from './dom-test-helper';
+import OverflowSimulator from './OverflowSimulator';
 
 let time = 0;
 (global as any).performance = {
@@ -9,88 +11,40 @@ let time = 0;
   },
 };
 
-const mockDoc = document;
-const mockEl = (name = 'div') => mockDoc.createElement(name);
-let mockOverflow = (el: HTMLElement) => {
-  return el.textContent!.length > 10;
-};
-
 const allText = (regions: any) =>
   regions
-    .map((region: any) => region.content.textContent)
+    .map((region: any) => region.element.textContent)
     .join('')
     .replace(/\s+/g, '');
 
-const MockRegion = () => {
-  const element = mockEl();
-  const content = mockEl();
-  element.classList.add('box');
-  content.classList.add('content');
-  const hasOverflowed = () => mockOverflow(content);
-  const path: HTMLElement[] = [];
-  const instance = {
-    path,
-    element,
-    content,
-    get currentElement() {
-      return instance.path.length < 1
-        ? content
-        : instance.path[instance.path.length - 1];
-    },
-    setPath: (newPath: HTMLElement[]) => {
-      instance.path = newPath;
-      if (newPath.length > 0) content.appendChild(newPath[0]);
-    },
-    isEmpty: () => false,
-    hasOverflowed,
-    isReasonableSize: true,
-  };
-  return instance;
-};
-
 test('Preserves content order (10char overflow)', async () => {
-  const a = mockEl('div');
-  const b = mockEl('p');
-  const c = mockEl('span');
-  a.textContent = 'A content.';
-  b.textContent = 'B content.';
-  c.textContent = 'C content.';
-  a.appendChild(b);
-  b.appendChild(c);
+  const a = div('A content.', p('B content.', span('C content.')));
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = MockRegion();
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 10);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 10;
-  await flowIntoRegions({
-    content: a,
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(a, { getNextContainer });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
 });
 
 test('Splits a single div over many pages (10char overflow)', async () => {
-  const content = mockEl();
+  const content = div();
   content.textContent = 'A content. B content. C content.';
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = MockRegion();
+  const regions: OverflowSimulator[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 10);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 10;
-  await flowIntoRegions({
-    content,
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe('Acontent.Bcontent.Ccontent.');
@@ -104,28 +58,24 @@ test('Splits a single div over many pages (10char overflow)', async () => {
 });
 
 test('Split elements over many pages (100char overflow)', async () => {
-  const content = mockEl('section');
+  const content = section();
   let expectedText = '';
   for (let i = 0; i < 20; i += 1) {
-    const e = mockEl('p');
+    const e = p();
     const txt = `Paragraph ${i}`;
     e.textContent = txt;
     expectedText += txt.replace(/\s+/g, '');
     content.appendChild(e);
   }
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = MockRegion();
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 100;
-  await flowIntoRegions({
-    content,
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(3);
   expect(allText(regions)).toBe(expectedText);
@@ -133,43 +83,40 @@ test('Split elements over many pages (100char overflow)', async () => {
     regions.map(region => region.element.textContent.length > 100),
   ).toEqual([false, false, false]);
 });
+
 //
 test('Split elements over many pages (5children overflow)', async () => {
-  const content = mockEl('div');
+  const content = div();
   let expectedText = '';
   for (let i = 0; i < 20; i += 1) {
-    const e = mockEl('p');
+    const e = p();
     const txt = `Paragraph ${i}`;
     e.textContent = txt;
     expectedText += txt.replace(/\s+/g, '');
     content.appendChild(e);
   }
 
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = MockRegion();
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => {
+      const count = (el.querySelectorAll('*') || []).length;
+      return count > 5;
+    });
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => {
-    const count = (el.querySelectorAll('*') || []).length;
-    return count > 5;
-  };
-  await flowIntoRegions({
-    content,
-    createRegion: (createRegion as any) as RegionGetter,
-  });
+  await flowIntoRegions(content, { getNextContainer });
 
   expect(regions.length).toBe(5);
   expect(allText(regions)).toBe(expectedText);
 });
 
 test('Spreads elements over many pages without splitting any (100char overflow)', async () => {
-  const content = mockEl('section');
+  const content = h('section');
   let expectedText = '';
   for (let i = 0; i < 20; i += 1) {
-    const e = mockEl('p');
+    const e = p();
     const txt = `Paragraph ${i}`;
     e.textContent = txt;
     expectedText += txt.replace(/\s+/g, '');
@@ -177,23 +124,18 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   }
 
   const canSplit = (el: HTMLElement) => !el.matches('p');
-  const regions: any[] = [];
-  const createRegion = () => {
-    const r = MockRegion();
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
     return r;
   };
 
-  mockOverflow = el => el.textContent!.length > 100;
-  await flowIntoRegions({
-    content,
-    createRegion: (createRegion as any) as RegionGetter,
-    canSplit,
-  });
+  await flowIntoRegions(content, { getNextContainer, canSplit });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
-    .map(region => region.content.querySelectorAll('p').length)
+    .map(region => region.element.querySelectorAll('p').length)
     .reduce((a, b) => a + b);
   expect(endParagraphCount).toBe(20);
 
@@ -203,30 +145,88 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   ).toEqual([false, false, false]);
 });
 
+test("Shifts appropriate parent if can't split", async () => {
+  const splittableWrap = h('aside');
+  let expectedText = '';
+  for (let i = 0; i < 5; i += 1) {
+    const el = section(
+      p(`Paragraph 1 in Section${i}`),
+      p(`Paragraph 1 in Section${i}`),
+    );
+    expectedText += el.textContent.replace(/\s+/g, '');
+    splittableWrap.append(el);
+  }
+
+  const regions: OverflowDetectingContainer[] = [];
+  const getNextContainer = () => {
+    const r = new OverflowSimulator(el => {
+      const count = (el.querySelectorAll('*') || []).length;
+      return count > 5;
+    });
+    regions.push(r);
+    return r;
+  };
+
+  const content = div(splittableWrap);
+  await flowIntoRegions(content, { getNextContainer });
+
+  expect(regions.length).toBe(5);
+  expect(allText(regions)).toBe(expectedText);
+  const endParagraphCount = regions
+    .map(region => region.element.querySelectorAll('p').length)
+    .reduce((a, b) => a + b);
+  expect(endParagraphCount).toBe(10);
+
+  const endSectionCount = regions
+    .map(region => region.element.querySelectorAll('section').length)
+    .reduce((a, b) => a + b);
+  expect(endSectionCount).toBe(5);
+
+  const endAsideCount = regions
+    .map(region => region.element.querySelectorAll('aside').length)
+    .reduce((a, b) => a + b);
+  expect(endAsideCount).toBe(5);
+});
+
+// test('Applies split classes', async () => {
+//   const applyRulesStub = (a: HTMLElement, b: HTMLElement) => {
+//     a.classList.add('toNext');
+//     b.classList.add('fromPrev');
+//   };
+
+//   test('Split elements get classes from custom rule', () => {
+//     const div = document.createElement('div');
+//     const span = document.createElement('span');
+//     const crumb = [div, span];
+//     const newCrumb = clonePath(crumb, applyRulesStub);
+
+//     expect(div.classList.contains('toNext')).toBe(true);
+//     expect(span.classList.contains('toNext')).toBe(true);
+//     expect(newCrumb[0].classList.contains('fromPrev')).toBe(true);
+//     expect(newCrumb[1].classList.contains('fromPrev')).toBe(true);
+//   });
+// });
+
 test('Throws Errors when missing required parameters', async () => {
   expect(
     (async () => {
-      await flowIntoRegions({} as any);
+      // @ts-ignore
+      await flowIntoRegions(true);
     })(),
   ).rejects.toThrow();
 
   expect(
     (async () => {
-      await flowIntoRegions({ content: true } as any);
+      await flowIntoRegions(undefined, { createRegion: () => false } as any);
     })(),
   ).rejects.toThrow();
 
   expect(
     (async () => {
-      await flowIntoRegions({ createRegion: () => false } as any);
-    })(),
-  ).rejects.toThrow();
-
-  expect(
-    (async () => {
-      await flowIntoRegions({
-        content: document.createElement('div'),
-        createRegion: () => MockRegion(),
+      await flowIntoRegions(document.createElement('div'), {
+        getNextContainer: () => {
+          return new OverflowSimulator(() => true);
+        },
       } as any);
     })(),
   ).resolves.not.toThrow();

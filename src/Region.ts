@@ -1,53 +1,41 @@
-const div = (cls: string): HTMLElement => {
-  const el = document.createElement('div');
-  el.classList.add(cls);
-  return el;
-};
+import { OverflowDetectingContainer } from './types';
 
-class Region {
+class Region implements OverflowDetectingContainer {
   element: HTMLElement;
-  content: HTMLElement;
-  path: HTMLElement[];
-  suppressErrors: boolean = false;
+  private measurementWrapper: HTMLElement;
 
   constructor(el: HTMLElement) {
     this.element = el;
-    this.content = div('region-content');
-    this.content.style.position = 'relative';
-    this.element.appendChild(this.content);
-    this.path = [];
+    this.measurementWrapper = document.createElement('div');
+    this.measurementWrapper.classList.add('region-content');
+    this.measurementWrapper.style.position = 'relative';
+    this.element.append(this.measurementWrapper);
   }
 
-  setPath(newPath: HTMLElement[]) {
-    this.path = newPath;
-    if (newPath.length > 0) this.content.appendChild(newPath[0]);
+  append(...nodes: (string | Node)[]) {
+    this.measurementWrapper.append(...nodes);
   }
 
-  get currentElement(): HTMLElement {
-    const len = this.path.length;
-    if (len > 0) return this.path[len - 1];
-    return this.content;
-  }
-
+  // TODO: do we still need this?
   isEmpty(): boolean {
-    const el: HTMLElement = this.content;
+    const el = this.measurementWrapper;
     if (el.textContent === null) return true;
     return el.textContent.trim() === '' && el.offsetHeight < 2;
   }
 
+  // TODO: do we still need this?
   isReasonableSize(): boolean {
     const box = this.element.getBoundingClientRect();
     return box.height > 100 && box.width > 100; // TODO: Number is arbitrary
   }
 
   overflowAmount(): number {
-    const contentH = this.content.offsetHeight;
-    const boxH = this.element.offsetHeight;
-    if (boxH === 0)
-      throw Error(
-        'Regionizer: Trying to flow into an element with zero height.',
-      );
-    return contentH - boxH;
+    const contentHeight = this.measurementWrapper.offsetHeight;
+    const containerHeight = this.element.offsetHeight;
+    if (containerHeight === 0) {
+      throw Error('Regionize: Trying to flow into an element with zero height.');
+    }
+    return contentHeight - containerHeight;
   }
 
   hasOverflowed(): boolean {

@@ -1,9 +1,10 @@
 import { isTextNode, isUnloadedImage, isContentElement } from '../typeGuards';
+import * as dom from './dom-test-helper';
 
-const textNode = document.createTextNode('sample');
-const div = document.createElement('div');
-const img = document.createElement('img');
-const script = document.createElement('script');
+const textNode = dom.text('sample');
+const div = dom.div();
+const img = dom.h('img');
+const script = dom.h('script');
 
 test('isTextNode recognizes textNode', () => {
   expect(isTextNode(textNode)).toBe(true);
