@@ -1,4 +1,4 @@
-import { isNode, isString } from '../typeGuards';
+import { isNode, isString } from '../guards';
 
 // A tiny, sloppy hyperscript-like function for templating the DOM.
 //

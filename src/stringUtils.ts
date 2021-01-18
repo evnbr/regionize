@@ -1,8 +1,8 @@
 const SPACE = ' ';
 
-const isAllWhitespace = (text: string) => text.trim() === '';
+export const isAllWhitespace = (text: string) => text.trim() === '';
 
-const nextWordEnd = (text: string, startIndex: number): number => {
+export const nextWordEnd = (text: string, startIndex: number): number => {
   let newIndex = startIndex + 1;
 
   // If we started on a space character, first advance to the word itself
@@ -17,7 +17,7 @@ const nextWordEnd = (text: string, startIndex: number): number => {
   return newIndex;
 };
 
-const previousWordEnd = (text: string, startIndex: number): number => {
+export const previousWordEnd = (text: string, startIndex: number): number => {
   let newIndex = startIndex;
   if (text.charAt(newIndex) === SPACE) {
     newIndex -= 1;
@@ -30,5 +30,3 @@ const previousWordEnd = (text: string, startIndex: number): number => {
 
   return newIndex;
 };
-
-export { nextWordEnd, previousWordEnd, isAllWhitespace };

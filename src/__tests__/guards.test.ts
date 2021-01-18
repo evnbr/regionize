@@ -1,4 +1,4 @@
-import { isTextNode, isUnloadedImage, isContentElement } from '../typeGuards';
+import { isTextNode, isUnloadedImage, isContentElement } from '../guards';
 import * as dom from './dom-test-helper';
 
 const textNode = dom.text('sample');

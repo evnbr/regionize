@@ -1,13 +1,29 @@
-import { RegionizeConfig, AppendStatus, AppendResult, ProgressEventName, OverflowDetectingContainer } from './types';
-import { isTextNode, isUnloadedImage, isContentElement } from './typeGuards';
+import {
+  RegionizeConfig,
+  AppendStatus,
+  AppendResult,
+  ProgressEventName,
+  OverflowDetectingContainer
+} from './types';
 
-import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
+import {
+  isTextNode,
+  isUnloadedImage,
+  isContentElement
+} from './guards';
+
+import {
+  addTextNodeWithoutSplit,
+  addTextUntilOverflow
+} from './addTextNode';
+
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
-import { isSplitAcrossRegions, setIsSplitAcrossRegions } from './isSplit';
+import { isSplit, setIsSplit } from './attributeHelper';
 import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
 import shouldIgnoreOverflow from './ignoreOverflow';
+import { timeStamp } from 'console';
 
 const noop = () => {};
 const asyncNoop = (async () => noop());
@@ -70,7 +86,7 @@ class FlowManager {
     if (original.matches('tr')) {
       tableRowRule(original, remainder, cloneWithRules);
     }
-    setIsSplitAcrossRegions(remainder);
+    setIsSplit(remainder);
     this.config.onDidSplit(
       original,
       remainder,
@@ -129,6 +145,69 @@ class FlowManager {
     }
   }
 
+  async addChild(
+    child: Text | HTMLElement,
+    parent: HTMLElement,
+    region: OverflowDetectingContainer,
+  ): Promise<AppendResult> {
+    if (isTextNode(child)) {
+      return await this.addText(child, parent, region);
+    }
+    return this.addElement(child, parent, region);
+  }
+
+  async traverseChildren(
+    element: HTMLElement,
+    region: OverflowDetectingContainer,
+  ): Promise<AppendResult> {
+    // Clear the element. The child nodes will either
+    // be added back to this element or added to a new remainder.
+
+    // ignore scripts, comments, etc when iterating
+    const remainingChildNodes = [...element.childNodes]
+      .filter((c): c is (HTMLElement | Text) => {
+        return isContentElement(c) || isTextNode(c);
+      });
+    element.innerHTML = '';
+
+    if (region.hasOverflowed() && !shouldIgnoreOverflow(element)) {
+      // Doesn't fit when empty, make sure to restore
+      // the children before rejecting.
+      element.append(...remainingChildNodes);
+      return this.createCancelResult(element);
+    }
+
+    while (remainingChildNodes.length > 0) {
+      // pop the first child off. TODO: should we use shift()?
+      const child = remainingChildNodes.shift()!;
+
+      let childResult = await this.addChild(child, element, region);
+
+      switch (childResult.status) {
+        case AppendStatus.ADDED_NONE:
+          if (element.childNodes.length == 0) {
+            // Element did fit when empty, but rejected when it contains any portion of its
+            // first child. Reject entirely and restart in the next region.
+            element.append(child, ...remainingChildNodes);
+            return this.createCancelResult(element);
+          }
+          return this.createRemainderResult(element, [child, ...remainingChildNodes]);
+
+        case AppendStatus.ADDED_PARTIAL:
+          return this.createRemainderResult(element, [childResult.remainder, ...remainingChildNodes]);
+
+        case AppendStatus.ADDED_ALL:
+          // keep looping
+          continue;  
+      }
+    }
+
+    // Successfully added all children
+    return {
+      status: AppendStatus.ADDED_ALL,
+    };
+  }
+
   async addElement(
     element: HTMLElement,
     parentEl: HTMLElement | undefined,
@@ -141,103 +220,28 @@ class FlowManager {
 
     // Transforms before adding. Only applied once at the beginning of each
     // element, and not when inserting the remainder of the element.
-    if (!isSplitAcrossRegions(element)) {
+    if (!isSplit(element)) {
       await this.config.onWillAdd(element);
     }
 
-    // Append element and push onto the the stack
     const parent = parentEl ?? region;
     parent.append(element);
 
     const hasOverflowed = region.hasOverflowed();
+
     if (hasOverflowed && !this.canSplit(element, region)) {
       // If we can't clear and traverse children, we already know it doesn't fit.
-      // TODO: Should we explicitly remove it?
-      return { status: AppendStatus.ADDED_NONE };
+      return this.createCancelResult(element);
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
-      // Clear the element. The child nodes will either
-      // be added back to this element or added to a new remainder.
-      const remainingChildNodes = [...element.childNodes];
-      element.innerHTML = '';
-
-      if (region.hasOverflowed() && !shouldIgnoreOverflow(element)) {
-        // If it doesn't fit when empty, make sure to restore
-        // the children before rejecting.
-        element.remove();
-        element.append(...remainingChildNodes);
-        this.config.onDidRemove(element);
-
-        return {
-          status: AppendStatus.ADDED_NONE,
-        };
-      }
-
-      // Start adding childNodes, when we overflow, assemble a cloned
-      // element that contains the remainder childNodes and return.
-      while (remainingChildNodes.length > 0) {
-        // pop the first child off. TODO: should we use shift()?
-        const child = remainingChildNodes.shift()!;
-
-        let childResult: AppendResult;
-
-        if (isTextNode(child)) {
-          childResult = await this.addText(child, element, region);
-        } else if (isContentElement(child)) {
-          childResult = await this.addElement(child, element, region);
-        } else {
-          // Skip comments, script tags, and unknown nodes
-          continue;
-        }
-
-        if (childResult.status === AppendStatus.ADDED_ALL) {
-          continue;
-        }
-
-        if (
-          childResult.status === AppendStatus.ADDED_NONE
-          && element.childNodes.length == 0
-        ) {
-          // If we reach here, we know the element did fit when empty, but 
-          // rejected when it contains any portion of its first child.
-          // This should be treated the same as if it didn't fit when empty—
-          // reject entirely and start in the next region.
-
-          // Make sure to restore the children before rejecting.
-          // TODO: keep in sync with line 176?
-          element.remove();
-          element.append(child, ...remainingChildNodes);
-          this.config.onDidRemove(element);
-
-          return {
-            status: AppendStatus.ADDED_NONE,
-          };
-        }
-
-        // If we reach here, at least part of the element has been added
-        // successfully to the current region. Create a new remainder element
-        // that can be added to the next region.
-        const remainder = cloneWithoutChildren(element);
-
-        if (childResult.status === AppendStatus.ADDED_NONE) {
-          remainder.append(child, ...remainingChildNodes);
-        }
-        if (childResult.status === AppendStatus.ADDED_PARTIAL) {
-          remainder.append(childResult.remainder, ...remainingChildNodes);
-        }
-
-        this.applySplitRules(element, remainder);
-
-        return {
-          status: AppendStatus.ADDED_PARTIAL,
-          remainder: remainder,
-        };
+      const result = await this.traverseChildren(element, region);
+      if (result.status !== AppendStatus.ADDED_ALL) {
+        return result;
       }
     }
 
-    // We finished adding this entire element without overflowing the region.
-
+    // Success, we finished adding this entire element without overflowing the region.
     await this.config.onDidAdd(element);
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
@@ -246,6 +250,28 @@ class FlowManager {
       status: AppendStatus.ADDED_ALL,
     };
   }
+
+  createRemainderResult(original: HTMLElement, contents: Node[]): AppendResult {
+    const remainder = cloneWithoutChildren(original);
+    remainder.append(...contents);
+
+    this.applySplitRules(original, remainder);
+
+    return {
+      status: AppendStatus.ADDED_PARTIAL,
+      remainder: remainder,
+    };
+  }
+
+  createCancelResult(element: HTMLElement): AppendResult {
+    element.remove();
+    this.config.onDidRemove(element);
+
+    return {
+      status: AppendStatus.ADDED_NONE,
+    };
+  }
+
 
   // Wraps addElementAcrossRegions with an estimator for convenience
   async addAcrossRegions(content: HTMLElement): Promise<void> {

@@ -1,4 +1,4 @@
-import { isSplitAcrossRegions } from './isSplit';
+import { isSplit } from './attributeHelper';
 
 const preserveNumbering = (
   original: HTMLElement,
@@ -12,7 +12,7 @@ const preserveNumbering = (
     prevStart = parseInt(original.getAttribute('start')!, 10);
   }
   const nextChild = remainder.firstElementChild;
-  if (nextChild && nextChild.tagName === 'LI' && isSplitAcrossRegions(nextChild)) {
+  if (nextChild && nextChild.tagName === 'LI' && isSplit(nextChild)) {
     // the first list item actually started in the previous region
     prevStart -= 1;
   }

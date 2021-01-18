@@ -7,13 +7,11 @@ const nextFrame = (): Promise<number> =>
 
 let lastYieldTime = 0;
 
-const shouldYield = (): boolean => {
+export const shouldYield = (): boolean => {
   const timeSinceYield = performance.now() - lastYieldTime;
   return timeSinceYield > maxWorkTimePerFrame;
 };
 
-const yieldIfNeeded = async (): Promise<void> => {
+export const yieldIfNeeded = async (): Promise<void> => {
   if (shouldYield()) lastYieldTime = await nextFrame();
 };
-
-export { shouldYield, yieldIfNeeded };

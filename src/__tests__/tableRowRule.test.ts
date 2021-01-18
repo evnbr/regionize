@@ -1,7 +1,6 @@
 import { flowIntoRegions } from '../index';
 import { table, tr, td } from './dom-test-helper';
 import OverflowSimulator from './OverflowSimulator';
-import type Region from '../Region';
 import { OverflowDetectingContainer } from '../types';
 
 describe('Table rows', () => {
