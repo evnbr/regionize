@@ -14,7 +14,7 @@ class OverflowSimulator implements OverflowDetectingContainer {
   constructor(overflowFunc: (el: HTMLElement) => boolean) {
     if (!overflowFunc) throw Error('Overflow not mocked');
     this.mockOverflowFunction = overflowFunc;
-
+    this.hasOverflowed = this.hasOverflowed.bind(this);
     this.element.append(this.content);
   }
   hasOverflowed(): boolean {

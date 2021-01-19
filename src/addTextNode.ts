@@ -1,7 +1,7 @@
 import { yieldIfNeeded } from './schedule';
-import isInsideOverflowIgnoringElement from './ignoreOverflow';
+import { isInsideIgnoreOverflow } from './attributeHelper';
 import { AppendStatus, AppendResult } from './types';
-import { nextWordEnd, previousWordEnd, isAllWhitespace } from './stringUtils';
+import { indexOfNextWordEnd, indexOfPreviousWordEnd, isAllWhitespace } from './stringUtils';
 
 type Checker = () => boolean;
 
@@ -16,7 +16,9 @@ const addTextNodeWithoutSplit = async (
   const success = !hasOverflowed();
   if (!success) container.removeChild(textNode);
   await yieldIfNeeded();
-  return { status: success ? AppendStatus.ADDED_ALL : AppendStatus.ADDED_NONE };
+  return {
+    status: success ? AppendStatus.ADDED_ALL : AppendStatus.ADDED_NONE
+  };
 };
 
 // Incrementally add words to the container until it just barely doesn't
@@ -29,7 +31,7 @@ const addTextUntilOverflow = async (
   const originalText = textNode.nodeValue ?? '';
   container.appendChild(textNode);
 
-  if (!hasOverflowed() || isInsideOverflowIgnoringElement(container)) {
+  if (!hasOverflowed() || isInsideIgnoreOverflow(container)) {
     // The whole thing fits
     return { status: AppendStatus.ADDED_ALL };
   }
@@ -40,7 +42,7 @@ const addTextUntilOverflow = async (
 
   while (!hasOverflowed() && proposedEnd < originalText.length) {
     // Reveal the next word
-    proposedEnd = nextWordEnd(originalText, proposedEnd);
+    proposedEnd = indexOfNextWordEnd(originalText, proposedEnd);
 
     if (proposedEnd < originalText.length) {
       textNode.nodeValue = originalText.substr(0, proposedEnd);
@@ -49,7 +51,7 @@ const addTextUntilOverflow = async (
   }
 
   // Back out to word boundary
-  const wordEnd = previousWordEnd(originalText, proposedEnd);
+  const wordEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
   const fittingText = originalText.substr(0, wordEnd);
 
   if (wordEnd < 1 || isAllWhitespace(fittingText)) {

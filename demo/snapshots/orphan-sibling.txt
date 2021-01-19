@@ -1,8 +1,8 @@
 
           <div>
             <h4 class="fg-blue">Container</h4>
-            <div class="region box">
-            <div class="region-content" style="position: relative;"><div class="content box">
+            <div class="region box" data-region="true">
+            <div class="region-measured-content" style="position: relative;"><div class="content box">
             
       <h3>First Paragraph</h3>
       <p>

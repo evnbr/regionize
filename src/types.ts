@@ -1,5 +1,3 @@
-export type ElementChecker = (el: HTMLElement) => boolean;
-
 export const enum AppendStatus {
   ADDED_ALL = 'all',
   ADDED_PARTIAL = 'partial',
@@ -45,8 +43,9 @@ export interface OverflowDetectingContainer {
 export interface RegionizeConfig {
   getNextContainer: () => OverflowDetectingContainer;
   onDidSplit: SplitRuleApplier;
-  canSplit: ElementChecker;
-  shouldTraverse: ElementChecker;
+  canSplit: (el: HTMLElement) => boolean;
+  canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
+  shouldTraverse: (el: HTMLElement) => boolean;
   onWillAdd: AsyncRuleApplier;
   onDidAdd: AsyncRuleApplier;
   onDidRemove: AsyncRuleApplier;

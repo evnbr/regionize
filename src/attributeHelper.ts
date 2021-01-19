@@ -1,8 +1,13 @@
 const IS_REGION_ATTR = 'data-region';
 const IS_SPLIT_ATTR = 'data-region-split';
+const IGNORE_OVERFLOW_ATTER = 'data-ignore-overflow';
+
+// ---
+
+// Utils
 
 // Util to add/remove atribute rather than set boolean strng
-const toggleAttr = (el: HTMLElement, attr: string, newVal = true) => {
+const toggleAttr = (el: Element, attr: string, newVal = true) => {
   if (newVal) {
     el.setAttribute(attr, 'true');
   } else {
@@ -10,8 +15,8 @@ const toggleAttr = (el: HTMLElement, attr: string, newVal = true) => {
   }
 }
 
-// Util to walk up the dom, checking parents, until we hit a region boundary
-const isInside = (el: HTMLElement, cb: ((el: HTMLElement) => boolean)): boolean => {
+// Walk up the dom, checking parents, until we hit a region boundary
+const isInsideElementMatching = (el: Element, cb: ((el: Element) => boolean)): boolean => {
   if (isRegion(el)) {
     return false;
   }
@@ -21,26 +26,47 @@ const isInside = (el: HTMLElement, cb: ((el: HTMLElement) => boolean)): boolean 
   }
 
   if (el.parentElement) {
-    return isInside(el.parentElement, cb);
+    return isInsideElementMatching(el.parentElement, cb);
   }
 
   return false;
 }
 
-// export const isInsideSplit = (el: HTMLElement) => {
-//   return isInside(el, isSplit);
-// };
+// ---
 
-export const isSplit = (el: HTMLElement) => {
+// Is Split
+export const isSplit = (el: Element) => {
   return el.hasAttribute(IS_SPLIT_ATTR);
 };
-export const setIsSplit = (el: HTMLElement, newVal = true) => {
+
+export const setIsSplit = (el: Element, newVal = true) => {
   toggleAttr(el, IS_SPLIT_ATTR, newVal);
 };
 
-export const isRegion = (el: HTMLElement) => {
+// ---
+
+// Is Region
+
+export const isRegion = (el: Element) => {
   return el.hasAttribute(IS_REGION_ATTR);
 };
-export const setIsRegion = (el: HTMLElement, newVal = true) => {
+
+export const setIsRegion = (el: Element, newVal = true) => {
   toggleAttr(el, IS_REGION_ATTR, newVal);
+};
+
+// ---
+
+// Ignore Overflow
+
+export const isIgnoreOverflow = (el: Element) => {
+  return el.hasAttribute(IGNORE_OVERFLOW_ATTER);
+};
+
+export const setIgnoreOverflow = (el: Element, newVal = true) => {
+  toggleAttr(el, IGNORE_OVERFLOW_ATTER, newVal);
+};
+
+export const isInsideIgnoreOverflow = (element: HTMLElement): boolean => {
+  return isInsideElementMatching(element, isIgnoreOverflow);
 };
