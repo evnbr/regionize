@@ -140,9 +140,17 @@ const testCases = [
     name: 'Orphaned sibling',
     desc: 'Currently, regionize does not handle keeping siblings together, ie a heading with its following paragraphs. This may be added in a future release.',
     contentId: orphanHeadingContent,
+    config: {},
+  },
+  {
+    id: 'orphan-sibling-2',
+    name: 'Orphaned sibling',
+    desc: 'Test.',
+    contentId: orphanHeadingContent,
     config: {
-      onDidSplit: (el, remainder) => {
-        remainder.style.textIndent = 0;
+      canSplitBetween: (a, b) => {
+        if (a.matches('h3')) return false;
+        return true;
       },
     },
   },

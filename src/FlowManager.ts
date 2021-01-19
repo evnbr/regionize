@@ -18,6 +18,8 @@ import {
   addTextUntilOverflow
 } from './addTextNode';
 
+import { findValidSplit, SplitSiblingResult } from './splitSiblings';
+
 import ensureImageLoaded from './ensureImageLoaded';
 import orderedListRule from './orderedListRule';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from './attributeHelper';
@@ -152,6 +154,22 @@ class FlowManager {
     return this.addElement(child, parent, region);
   }
 
+  private splitSiblings(proposed: SplitSiblingResult): SplitSiblingResult {
+    const siblings = findValidSplit(proposed, this.config.canSplitBetween);
+
+    for (let sib of siblings.remainders) {
+      if (isElement(sib)) {
+        // TODO: safely remove recursively
+        // TODO: called twice because child may already hace been rermoved.
+        sib.remove();
+        this.config.onDidRemove(sib);
+        console.log(sib);
+      }
+    }
+
+    return siblings;
+  }
+
   private async traverseChildren(
     element: HTMLElement,
     region: OverflowDetectingContainer,
@@ -162,11 +180,11 @@ class FlowManager {
       .filter((c): c is (HTMLElement | Text) => {
         return isContentElement(c) || isTextNode(c);
       });
-
     
     element.innerHTML = ''; // Clear children
 
     if (region.hasOverflowed() && !isInsideIgnoreOverflow(element)) {
+      console.log('none empty', element);
       // Doesn't fit when empty
       return this.cancelAndCreateNoneResult(element, remainingChildren);
     }
@@ -179,19 +197,21 @@ class FlowManager {
 
       switch (childResult.status) {
         case AppendStatus.ADDED_NONE:
-          const contents = [child, ...remainingChildren];
+          const siblings = this.splitSiblings({ added: [...element.childNodes], remainders: [child] });
+          const overflowingChildren = [...siblings.remainders, ...remainingChildren];
+
           if (element.childNodes.length == 0) {
-            // Element did fit when empty, but failed to add any portion of its
+            // Element seemed to fit when empty, but failed to add any portion of its
             // first child. Reject entirely and restart in the next region.
-            return this.cancelAndCreateNoneResult(element, contents);
+            return this.cancelAndCreateNoneResult(element, overflowingChildren);
           }
-          return this.createRemainderResult(element, contents);
+          return this.createRemainderResult(element, overflowingChildren);
 
         case AppendStatus.ADDED_PARTIAL:
           return this.createRemainderResult(element, [childResult.remainder, ...remainingChildren]);
 
         case AppendStatus.ADDED_ALL:
-          // keep looping
+          // Move on to the next sibling
           continue;  
       }
     }
@@ -229,9 +249,9 @@ class FlowManager {
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
-      const result = await this.traverseChildren(element, region);
-      if (result.status !== AppendStatus.ADDED_ALL) {
-        return result;
+      const childrenResult = await this.traverseChildren(element, region);
+      if (childrenResult.status !== AppendStatus.ADDED_ALL) {
+        return childrenResult;
       }
     }
 
