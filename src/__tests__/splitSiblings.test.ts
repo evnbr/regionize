@@ -56,6 +56,32 @@ describe('findValidSplit', () => {
     expect(result.remainders.length).toBe(4);
   });
 
+  test('No change if remainders is empty', () => {
+    const proposed = {
+      added: [dom.h2(), dom.p(), dom.h2()],
+      remainders: [dom.text('  \n')]
+    };
+    const result = findValidSplit(proposed, (a, b) => {
+      if (a.matches('h2')) return false;
+      return true;
+    })
+    expect(result.added.length).toBe(3);
+    expect(result.remainders.length).toBe(1);
+  });
+
+  test('No change if added is empty', () => {
+    const proposed = {
+      added: [dom.text('  \n')],
+      remainders: [dom.h2(), dom.p(), dom.h2()],
+    };
+    const result = findValidSplit(proposed, (a, b) => {
+      if (a.matches('h2')) return false;
+      return true;
+    })
+    expect(result.added.length).toBe(1);
+    expect(result.remainders.length).toBe(3);
+  });
+
   test('Callback fails when text between', () => {
     const proposed = {
       added: [

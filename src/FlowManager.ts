@@ -163,7 +163,7 @@ class FlowManager {
         // TODO: called twice because child may already hace been rermoved.
         sib.remove();
         this.config.onDidRemove(sib);
-        console.log(sib);
+        // console.log(sib);
       }
     }
 
