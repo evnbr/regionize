@@ -49,9 +49,8 @@
     "package": "rollup -c",
     "postbuild": "npm run package && npm run clean",
     "test": "jest",
-    "coverage": "jest --coverage",
     "clean": "rimraf build",
-    "test:ci": "jest && codecov",
+    "test:ci": "jest --coverage && codecov",
     "test:e2e": "node ./demo/run-test.js",
     "test:regen": "node ./demo/run-test.js save_snapshots"
   },
