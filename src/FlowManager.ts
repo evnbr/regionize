@@ -184,7 +184,6 @@ class FlowManager {
     element.innerHTML = ''; // Clear children
 
     if (region.hasOverflowed() && !isInsideIgnoreOverflow(element)) {
-      console.log('none empty', element);
       // Doesn't fit when empty
       return this.cancelAndCreateNoneResult(element, remainingChildren);
     }

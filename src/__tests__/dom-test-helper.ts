@@ -39,6 +39,8 @@ const span = (...arg: (Object | Appendable)[]) =>
   h('span', ...arg) as HTMLSpanElement;
 const p = (...arg: (Object | Appendable)[]) =>
   h('p', ...arg) as HTMLParagraphElement;
+const h2 = (...arg: (Object | Appendable)[]) =>
+  h('h2', ...arg) as HTMLHeadingElement;
 const section = (...arg: (Object | Appendable)[]) => h('section', ...arg);
 
 // list
@@ -61,4 +63,4 @@ const th = (...arg: (Object | Appendable)[]) =>
 
 const text = (text: string): Text => document.createTextNode(text);
 
-export { h, div, span, p, section, text, ol, ul, li, table, tr, th, td };
+export { h, h2, div, span, p, section, text, ol, ul, li, table, tr, th, td };

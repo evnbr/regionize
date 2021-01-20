@@ -1,5 +1,6 @@
 import { RegionizeConfig } from './types';
-import { isElement } from './guards';
+import { isElement, isTextNode } from './guards';
+import { isAllWhitespace } from './stringUtils';
   
 
 export interface SplitSiblingResult {
@@ -7,14 +8,19 @@ export interface SplitSiblingResult {
   remainders: ChildNode[];
 }
 
-const getFirstElement = (elements: ChildNode[]): HTMLElement | undefined => {
-  // the first HTMLElement in a list of child nodes (ignoring text/comment nodes)
-  return elements.find(isElement);
+// the first node that's either an element, or a textnode with content
+const getFirstContentNode = (nodes: ChildNode[]): ChildNode | undefined => {
+  return nodes.find((node) => {
+    if (isTextNode(node) && node.nodeValue && !isAllWhitespace(node.nodeValue)) {
+      return true;
+    }
+    if (isElement(node)) return true;
+    return false;
+  });
 }
 
-const getLastElement = (elements: ChildNode[]): HTMLElement | undefined => {
-  // the last HTMLElement in a list of child nodes (ignoring text/comment nodes)
-  return [...elements].reverse().find(isElement);;
+const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
+  return getFirstContentNode([...elements].reverse());;
 }
 
 export const findValidSplit = (
@@ -26,10 +32,11 @@ export const findValidSplit = (
   while (proposed.added.length > 0) {
     const { added, remainders } = proposed;
 
-    const prevEl = getLastElement(added);
-    const nextEl = getFirstElement(remainders);
+    const prevEl = getLastContentNode(added);
+    const nextEl = getFirstContentNode(remainders);
   
-    if (!nextEl || !prevEl) {
+    if (!nextEl || !prevEl || !isElement(nextEl) || !isElement(prevEl)) {
+      // Breaks that are not between two HTMLElements cannot be prevented
       return proposed;
     }
   
@@ -37,7 +44,7 @@ export const findValidSplit = (
       return proposed;
     }
     
-    // try overflowing one more node 
+    // try removing the last node and adding it to the remainder
     const shifted = added.pop()!;
     proposed = {
       added: [...added],

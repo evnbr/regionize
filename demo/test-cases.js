@@ -137,19 +137,21 @@ const testCases = [
   },
   {
     id: 'orphan-sibling',
-    name: 'Orphaned sibling',
-    desc: 'Currently, regionize does not handle keeping siblings together, ie a heading with its following paragraphs. This may be added in a future release.',
+    name: 'Orphaned sibling: Heading left behind at bottom of region',
+    desc: 'By default, a split can be inserted anywhere, ie between a heading and its following paragraphs.',
     contentId: orphanHeadingContent,
     config: {},
   },
   {
     id: 'orphan-sibling-2',
-    name: 'Orphaned sibling',
-    desc: 'Test.',
+    name: 'Using canSplitBetween to prevent orphaned sibling',
+    desc: 'If regionize can\'t add a split between two elements, they both are moved to the next page.',
     contentId: orphanHeadingContent,
     config: {
-      canSplitBetween: (a, b) => {
-        if (a.matches('h3')) return false;
+      canSplitBetween: (el, next) => {
+        if (el.matches('h3')) {
+          return false;
+        }
         return true;
       },
     },
