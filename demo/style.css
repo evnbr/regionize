@@ -9,9 +9,13 @@
   background: #f4f4f4;
 
   --bg: #f4f4f4;
+  --bg2: #e4e4e4;
+
   --red: #bb0000;
   --blue: #008eff;
   --green: green;
+
+  --sidebar-width: 200px;
 }
 
 body {
@@ -35,7 +39,7 @@ body {
 }
 
 .item {
-  padding: 12px 0 56px;
+  padding: 12px 0 56px calc(16px + var(--sidebar-width));
 }
 
 .item-desc {
@@ -53,6 +57,30 @@ body {
 .item-title a:hover {
   color: gray;
   text-decoration-color: currentColor;
+}
+
+nav {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--sidebar-width);
+  position: fixed;
+  background: var(--bg);
+  box-shadow: 1px 0 0 rgba(0,0,0,0.12);
+}
+
+.nav-item {
+  display: block;
+  color: inherit;
+  text-decoration: underline;
+  padding: 4px 12px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+}
+
+.nav-item:hover {
+  background: var(--bg2);
 }
 
 .row {
@@ -73,7 +101,7 @@ body {
 
 .config {
   width: 420px;
-  background: #e4e4e4;
+  background: var(--bg2);
   padding: 8px;
   font: 0.9rem/1.3rem Menlo;
   white-space: pre;

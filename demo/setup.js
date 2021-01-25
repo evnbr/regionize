@@ -69,6 +69,13 @@ const setup = async ({ id, name, desc, contentId, config }) => {
   // console.log(`Finished ${id}`);
 };
 
+const navItems = items.map(({ id, name }) => {
+  return h('a', { href: `#${id}`, className: 'nav-item' }, name);
+});
+
+const nav = document.querySelector('nav');
+nav.append(...navItems);
+
 Promise.all(items.map(setup)).then(() => {
   console.log('Done');
 

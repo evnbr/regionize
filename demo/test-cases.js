@@ -20,7 +20,7 @@ const testCases = [
     desc: 'Using onDidSplit to hide the duplicate indent',
     contentId: paragraphContent,
     config: {
-      onDidSplit: (el, remainder) => {
+      onSplit: (el, remainder) => {
         remainder.style.textIndent = 0;
       },
     },
@@ -38,7 +38,7 @@ const testCases = [
     desc: 'Using onDidSplit to hide the duplicate number',
     contentId: listContent,
     config: {
-      onDidSplit: (el, remainder) => {
+      onSplit: (el, remainder) => {
         if (remainder.matches('li')) {
           remainder.style.listStyleType = 'none';
         }
@@ -47,7 +47,7 @@ const testCases = [
   },
   {
     id: 'list-canSplit',
-    name: 'List item + canSplit',
+    name: 'Preventing split',
     desc: 'Using canSplit to keep each item whole',
     contentId: listContent,
     config: {
@@ -63,29 +63,33 @@ const testCases = [
   },
   {
     id: 'nest-styling',
-    name: 'Styling a split graphical element',
-    desc: 'Using onDidSplit to zero out padding and borders. Note that onDidSplit runs after the split point has been determined— you can make arbitrary style changes, including adjusting the space available for content, but content will not reflow.',
+    name: 'Styling a split',
+    desc: 'Using onSplit to zero out padding and borders. Note that onDidSplit runs after the split point has been determined— you can make arbitrary style changes, including adjusting the space available for content, but content will not reflow.',
     contentId: nestedContent,
     config: {
-      onDidSplit: (el, remainder) => {
+      onSplit: (el, remainder) => {
         if (el.matches('.bordered')) {
-          el.style.borderBottomWidth = 0;
-          el.style.paddingBottom = 0;
-          el.style.marginBottom = 0;
-          remainder.style.borderTopWidth = 0;
-          remainder.style.paddingTop = 0;
-          remainder.style.marginTop = 0;
+          Object.assign(el.style, {
+            borderBottomWidth: 0,
+            paddingBottom: 0,
+            marginBottom: 0,
+          });
+          Object.assign(remainder.style, {
+            borderTopWidth: 0,
+            paddingTop: 0,
+            marginTop: 0,
+          });
         }
       },
     },
   },
   {
     id: 'traverse1',
-    name: 'Optimization: Doesn\'t traverse elements if their parent fits',
-    desc: 'Note that onAdd is never called on the first inner element, since the first box fit in one go. The second box is traversed to find a good breaking point.',
+    name: 'Doesn\'t traverse elements if fits',
+    desc: 'Optimization: Note that onAdd is never called on the first inner element, since the first box fit in one go. The second box is traversed to find a good breaking point.',
     contentId: traverseContent,
     config: {
-      onDidAdd: (el) => {
+      onAddFinish: (el) => {
         if (el.matches('.inner')) {
           el.style.backgroundColor = 'yellow';
         }
@@ -94,12 +98,12 @@ const testCases = [
   },
   {
     id: 'traverse3',
-    name: 'Using shouldTraverse to override the above',
+    name: 'Using shouldTraverse',
     desc: 'We can de-optimize and force traversal of every inner element',
     contentId: traverseContent,
     config: {
       shouldTraverse: el => true,
-      onDidAdd: (el) => {
+      onAddFinish: (el) => {
         if (el.matches('.inner')) {
           el.style.backgroundColor = 'yellow';
         }
@@ -108,12 +112,12 @@ const testCases = [
   },
   {
     id: 'traverse2',
-    name: 'Optimization: Doesn\'t traverse elements if their parent can\'t split',
-    desc: 'Note that onAdd is not called on either of the inner elements. Since its parent is not splittable, the contents are skipped over as an optimization',
+    name: 'Doesn\'t traverse elements if can\'t split',
+    desc: 'Optimization: Note that onAdd is not called on either of the inner elements. Since its parent is not splittable, the contents are skipped over as an optimization',
     contentId: traverseContent,
     config: {
       canSplit: el => !el.matches('.bordered'),
-      onDidAdd: (el) => {
+      onAddFinish: (el) => {
         if (el.matches('.inner')) {
           el.style.backgroundColor = 'yellow';
         }
@@ -122,13 +126,13 @@ const testCases = [
   },
   {
     id: 'traverse4',
-    name: 'Using shouldTraverse to override the above',
+    name: 'Using shouldTraverse',
     desc: 'We can de-optimize here as well, and canSplit is still respected. (Note that the second inner item will only be traversed when it is added to its own region, and so isn\'t yellow here.)',
     contentId: traverseContent,
     config: {
       shouldTraverse: el => true,
       canSplit: el => !el.matches('.bordered'),
-      onDidAdd: (el) => {
+      onAddFinish: (el) => {
         if (el.matches('.inner')) {
           el.style.backgroundColor = 'yellow';
         }
@@ -137,14 +141,14 @@ const testCases = [
   },
   {
     id: 'orphan-sibling',
-    name: 'Orphaned sibling: Heading left behind at bottom of region',
+    name: 'Orphaned sibling',
     desc: 'By default, a split can be inserted anywhere, ie between a heading and its following paragraphs.',
     contentId: orphanHeadingContent,
     config: {},
   },
   {
     id: 'orphan-sibling-2',
-    name: 'Using canSplitBetween to prevent orphaned sibling',
+    name: 'Fixing orphaned sibling',
     desc: 'If regionize can\'t add a split between two elements, they both are moved to the next page.',
     contentId: orphanHeadingContent,
     config: {
@@ -162,7 +166,7 @@ const testCases = [
     desc: 'Currently, regionize does not handle orphaned lines (the beginning line of a paragraph left behind when the rest overflows, where you may prefer to break early and move the entire paragraph). This may be added in a future release.',
     contentId: orphanParaContent,
     config: {
-      onDidSplit: (el, remainder) => {
+      onSplit: (el, remainder) => {
         remainder.style.textIndent = 0;
       },
     },
@@ -173,7 +177,7 @@ const testCases = [
     desc: 'Currently, regionize does not handle widowed lines (the last line of a paragraph overflowing in a new region, where you may prefer to break early to overflow 2 lines).  This may be added in a future release.',
     contentId: widowParaContent,
     config: {
-      onDidSplit: (el, remainder) => {
+      onSplit: (el, remainder) => {
         remainder.style.textIndent = 0;
       },
     },
