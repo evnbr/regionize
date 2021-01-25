@@ -3,19 +3,24 @@ import { setIsRegion } from './attributeHelper';
 
 class Region implements OverflowDetectingContainer {
   element: HTMLElement;
-  initialContainerHeight: Number;
+  initialgetContainerHeight: Number;
   private measurementWrapper: HTMLElement;
 
   constructor(el: HTMLElement) {
     this.element = el;
-    this.measurementWrapper = document.createElement('div');
-    this.measurementWrapper.classList.add('region-measured-content');
-    this.measurementWrapper.style.position = 'relative';
+    this.measurementWrapper = Region.createWrapper();
     this.element.append(this.measurementWrapper);
     setIsRegion(el);
 
     this.hasOverflowed = this.hasOverflowed.bind(this);
-    this.initialContainerHeight = this.containerHeight();
+    this.initialgetContainerHeight = this.getContainerHeight();
+  }
+
+  private static createWrapper() {
+    const wrap = document.createElement('div');
+    wrap.classList.add('region-measured-content');
+    wrap.style.position = 'relative';
+    return wrap;
   }
 
   append(...nodes: (string | Node)[]) {
@@ -35,17 +40,17 @@ class Region implements OverflowDetectingContainer {
     return box.height > 100 && box.width > 100; // TODO: Number is arbitrary
   }
 
-  private containerHeight() {
+  private getContainerHeight() {
     return this.element.offsetHeight;
   }
 
-  private contentHeight() {
+  private getContentHeight() {
     return this.measurementWrapper.offsetHeight;
   }
 
   overflowAmount(): number {
-    const containerHeight = this.containerHeight();
-    const contentHeight = this.contentHeight();
+    const containerHeight = this.getContainerHeight();
+    const contentHeight = this.getContentHeight();
     if (containerHeight === 0) {
       throw Error('Regionize: Trying to flow into an element with zero height.');
     }

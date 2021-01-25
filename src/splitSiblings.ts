@@ -52,6 +52,7 @@ export const findValidSplit = (
     };
   }
 
+  // Couldn't add anything
   return proposed;
 }
   

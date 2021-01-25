@@ -42,12 +42,12 @@ export interface OverflowDetectingContainer {
 
 export interface RegionizeConfig {
   getNextContainer: () => OverflowDetectingContainer;
-  onDidSplit: SplitRuleApplier;
   canSplit: (el: HTMLElement) => boolean;
   canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
   shouldTraverse: (el: HTMLElement) => boolean;
-  onWillAdd: AsyncRuleApplier;
-  onDidAdd: AsyncRuleApplier;
-  onDidRemove: AsyncRuleApplier;
+  onAddStart: AsyncRuleApplier;
+  onAddFinish: AsyncRuleApplier;
+  onAddCancel: AsyncRuleApplier;
   onProgress: (e: RegionizeProgressEvent) => void;
+  onSplit: SplitRuleApplier;
 }

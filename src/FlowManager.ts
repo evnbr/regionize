@@ -49,11 +49,18 @@ class FlowManager {
       canSplit: opts.canSplit ?? always,
       canSplitBetween: opts.canSplitBetween ?? always,
       onProgress: opts.onProgress ?? noop,
-      onDidSplit: opts.onDidSplit ?? noop,
-      onWillAdd: opts.onWillAdd ?? asyncNoop,
-      onDidRemove: opts.onDidRemove ?? asyncNoop,
-      onDidAdd: opts.onDidAdd ?? asyncNoop,
+      onSplit: opts.onSplit ?? noop,
+      onAddStart: opts.onAddStart ?? asyncNoop,
+      onAddCancel: opts.onAddCancel ?? asyncNoop,
+      onAddFinish: opts.onAddFinish ?? asyncNoop,
     };
+
+    // Validate
+    Object.keys(opts).forEach((key) => {
+      if (key in this.config === false) {
+        console.warn(`Unknown RegionizeConfig option "${key}"`);
+      }
+    })
   }
 
   private emitProgress(eventName: ProgressEventName) {
@@ -89,7 +96,7 @@ class FlowManager {
       tableRowRule(original, remainder, cloneWithRules);
     }
     setIsSplit(remainder);
-    this.config.onDidSplit(
+    this.config.onSplit(
       original,
       remainder,
       remainder.firstElementChild as HTMLElement,
@@ -160,9 +167,9 @@ class FlowManager {
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
         // TODO: safely remove recursively
-        // TODO: called twice because child may already hace been rermoved.
+        // TODO: called twice because child may already hace been removed.
         sib.remove();
-        this.config.onDidRemove(sib);
+        this.config.onAddCancel(sib);
         // console.log(sib);
       }
     }
@@ -234,7 +241,7 @@ class FlowManager {
 
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
-      await this.config.onWillAdd(element);
+      await this.config.onAddStart(element);
     }
 
     const parent = parentEl ?? region;
@@ -255,7 +262,7 @@ class FlowManager {
     }
 
     // Success, we finished adding this entire element without overflowing the region.
-    await this.config.onDidAdd(element);
+    await this.config.onAddFinish(element);
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
 
@@ -283,7 +290,7 @@ class FlowManager {
       element.append(...contentsToRestore);
     }
 
-    this.config.onDidRemove(element);
+    this.config.onAddCancel(element);
 
     return {
       status: AppendStatus.ADDED_NONE,

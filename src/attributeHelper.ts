@@ -16,7 +16,7 @@ const toggleAttr = (el: Element, attr: string, newVal = true) => {
 }
 
 // Walk up the dom, checking parents against the callback, 
-// until one retruns true or we hit a region boundary
+// until one returns true or we hit a region boundary
 const isInsideElementMatching = (el: Element, cb: ((el: Element) => boolean)): boolean => {
   if (isRegion(el)) {
     return false;

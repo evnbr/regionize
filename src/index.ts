@@ -9,7 +9,7 @@ const flowIntoRegions = async (
   content: HTMLElement,
   opts: Partial<RegionizeConfig>,
 ): Promise<void> => {
-  if (!content) throw Error('content not specified');
+  if (!content) throw Error('Content not specified');
 
   const flow = new FlowManager(opts);
   await flow.addAcrossRegions(content);
@@ -20,7 +20,7 @@ const addUntilOverflow = async (
   container: HTMLElement,
   opts: Partial<RegionizeConfig>,
 ): Promise<AppendResult> => {
-  if (!content) throw Error('content not specified');
+  if (!content) throw Error('Content not specified');
 
   const region = new Region(container);
   const flow = new FlowManager(opts);
