@@ -1,7 +1,7 @@
 import { flowIntoRegions } from '../index';
 import { table, tr, td } from './dom-test-helper';
 import OverflowSimulator from './OverflowSimulator';
-import { OverflowDetectingContainer } from '../types';
+import { OverflowDetector } from '../types';
 
 describe('Table rows', () => {
   test('Cloned table row continues first column', async () => {
@@ -9,7 +9,7 @@ describe('Table rows', () => {
       tr(td('r1 cell 1,'), td('r1 cell 2,'), td('r1 cell 3, more,'), td('r1 cell 4')),
     );
 
-    const regions: OverflowDetectingContainer[] = [];
+    const regions: OverflowDetector[] = [];
     const getNextContainer = () => {
       const r = new OverflowSimulator(el => {
         // overflow if any cell has more than N char

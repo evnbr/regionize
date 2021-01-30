@@ -3,78 +3,50 @@ import {
   AppendStatus,
   AppendResult,
   ProgressEventName,
-  OverflowDetectingContainer
+  OverflowDetector,
+  TraverseHandler,
+  RegionizeProgressEvent
 } from './types';
 
-import {
-  isTextNode,
-  isUnloadedImage,
-  isContentElement,
-  isElement
-} from './guards';
-
-import {
-  addTextNodeWithoutSplit,
-  addTextUntilOverflow
-} from './addTextNode';
-
+import { isTextNode, isContentElement, isElement } from './guards';
+import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
 import { findValidSplit, SplitSiblingResult } from './splitSiblings';
-
-import ensureImageLoaded from './ensureImageLoaded';
-import orderedListRule from './orderedListRule';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from './attributeHelper';
-import tableRowRule from './tableRowRule';
 import ProgressEstimator from './ProgressEstimator';
-
-const noop = () => {};
-const asyncNoop = (async () => noop());
-const always = () => true;
-const never = () => false;
+import { PluginManager } from './plugins/PluginManager';
 
 const createRegionFallback = () => {
   throw Error('createRegion not specified');
 }
+const noop = () => {};
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
-class FlowManager {
+export class Traverser {
   estimator?: ProgressEstimator; // initialized in addAcrossRegions
-  config: RegionizeConfig;
+  plugins: TraverseHandler;
+  getNextContainer: () => OverflowDetector; 
+  progressCallback: (e: RegionizeProgressEvent) => void;
 
   constructor(opts: Partial<RegionizeConfig>) {
-    this.config = {
-      getNextContainer: opts.getNextContainer ?? createRegionFallback,
-      shouldTraverse: opts.shouldTraverse ?? never,
-      canSplit: opts.canSplit ?? always,
-      canSplitBetween: opts.canSplitBetween ?? always,
-      onProgress: opts.onProgress ?? noop,
-      onSplit: opts.onSplit ?? noop,
-      onAddStart: opts.onAddStart ?? asyncNoop,
-      onAddCancel: opts.onAddCancel ?? asyncNoop,
-      onAddFinish: opts.onAddFinish ?? asyncNoop,
-    };
-
-    // Validate
-    Object.keys(opts).forEach((key) => {
-      if (key in this.config === false) {
-        console.warn(`Unknown RegionizeConfig option "${key}"`);
-      }
-    })
+    this.getNextContainer = opts.getNextContainer ?? createRegionFallback,
+    this.progressCallback = opts.onProgress ?? noop;
+    this.plugins = new PluginManager(opts.plugins ?? []);
   }
 
   private emitProgress(eventName: ProgressEventName) {
     if (!this.estimator) return;
     if (eventName === 'done') {
       this.estimator.end();
-      this.config.onProgress({
+      this.progressCallback({
         state: eventName,
         estimatedProgress: 1,
         totalTime: this.estimator.totalTime,
         imageWaitTime: this.estimator.timeWaiting,
       });
     } else {
-      this.config.onProgress({
+      this.progressCallback({
         state: eventName,
         estimatedProgress: this.estimator.getPercentComplete(),
       });
@@ -89,14 +61,14 @@ class FlowManager {
       return clone;  
     };
 
-    if (original.matches('ol')) {
-      orderedListRule(original, remainder);
-    }
-    if (original.matches('tr')) {
-      tableRowRule(original, remainder, cloneWithRules);
-    }
+    // if (original.matches('ol')) {
+    //   orderedListRule(original, remainder);
+    // }
+    // if (original.matches('tr')) {
+    //   tableRowRule(original, remainder, cloneWithRules);
+    // }
     setIsSplit(remainder);
-    this.config.onSplit(
+    this.plugins.onSplit(
       original,
       remainder,
       remainder.firstElementChild as HTMLElement,
@@ -104,8 +76,8 @@ class FlowManager {
     );
   }
 
-  private canSplit(element: HTMLElement, region: OverflowDetectingContainer): boolean {
-    if (!this.config.canSplit(element)) {
+  private canSplit(element: HTMLElement, region: OverflowDetector): boolean {
+    if (!this.plugins.canSplit(element)) {
       return false;
     }
     if (element === region.element) {
@@ -118,13 +90,13 @@ class FlowManager {
   }
 
   private shouldTraverseChildren(element: HTMLElement): boolean {
-    if (element.querySelector('img')) {
+    // if (element.querySelector('img')) {
       // Since ensureImageLoaded() is only called when traversing, the size of the image may not be known yet.
       // Checking for overflow will not accurate, so traverse to be safe.
       // TODO: Could optimize this to instead call ensureImageLoaded earlier?
-      return true;
-    }
-    if (this.config.shouldTraverse(element)) {
+      // return true;
+    // }
+    if (this.plugins.shouldTraverse(element)) {
       // The caller has indicated the region size could change as a result of traversing the elements,
       // for example if a footnote would be added that eats into the available space for content.
       // If so, checking for overflow is not accurate.
@@ -133,14 +105,14 @@ class FlowManager {
     return false;
   }
 
-  private async ensureImageLoaded(img: HTMLImageElement) {
-    this.emitProgress('imageLoading');
-    const waitTime = await ensureImageLoaded(img);
-    this.estimator?.addWaitTime(waitTime);
-    this.emitProgress('inProgress');
-  }
+  // private async ensureImageLoaded(img: HTMLImageElement) {
+  //   this.emitProgress('imageLoading');
+  //   const waitTime = await ensureImageLoaded(img);
+  //   this.estimator?.addWaitTime(waitTime);
+  //   this.emitProgress('inProgress');
+  // }
 
-  private async addText(textNode: Text, parent: HTMLElement, region: OverflowDetectingContainer) {
+  private async addText(textNode: Text, parent: HTMLElement, region: OverflowDetector) {
     const shouldSplitText = this.canSplit(parent, region) && !isInsideIgnoreOverflow(parent);
 
     if (shouldSplitText) {
@@ -153,7 +125,7 @@ class FlowManager {
   private async addChild(
     child: Text | HTMLElement,
     parent: HTMLElement,
-    region: OverflowDetectingContainer,
+    region: OverflowDetector,
   ): Promise<AppendResult> {
     if (isTextNode(child)) {
       return await this.addText(child, parent, region);
@@ -162,14 +134,14 @@ class FlowManager {
   }
 
   private splitSiblings(proposed: SplitSiblingResult): SplitSiblingResult {
-    const siblings = findValidSplit(proposed, this.config.canSplitBetween);
+    const siblings = findValidSplit(proposed, this.plugins.canSplitBetween);
 
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
         // TODO: safely remove recursively
         // TODO: called twice because child may already hace been removed.
         sib.remove();
-        this.config.onAddCancel(sib);
+        this.plugins.onAddCancel(sib);
         // console.log(sib);
       }
     }
@@ -179,7 +151,7 @@ class FlowManager {
 
   private async traverseChildren(
     element: HTMLElement,
-    region: OverflowDetectingContainer,
+    region: OverflowDetector,
   ): Promise<AppendResult> {
 
     // ignore scripts, comments, etc when iterating
@@ -231,17 +203,17 @@ class FlowManager {
   async addElement(
     element: HTMLElement,
     parentEl: HTMLElement | undefined,
-    region: OverflowDetectingContainer,
+    region: OverflowDetector,
   ): Promise<AppendResult> {
 
-    if (isUnloadedImage(element)) {
+    // if (isUnloadedImage(element)) {
       // Measurements aren't valid yet
-      await this.ensureImageLoaded(element);
-    }
+      // await this.ensureImageLoaded(element);
+    // }
 
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
-      await this.config.onAddStart(element);
+      await this.plugins.onAddStart(element);
     }
 
     const parent = parentEl ?? region;
@@ -262,7 +234,7 @@ class FlowManager {
     }
 
     // Success, we finished adding this entire element without overflowing the region.
-    await this.config.onAddFinish(element);
+    await this.plugins.onAddFinish(element);
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
 
@@ -290,7 +262,7 @@ class FlowManager {
       element.append(...contentsToRestore);
     }
 
-    this.config.onAddCancel(element);
+    this.plugins.onAddCancel(element);
 
     return {
       status: AppendStatus.ADDED_NONE,
@@ -304,7 +276,7 @@ class FlowManager {
       content.querySelectorAll('*').length,
     );
 
-    const firstRegion = this.config.getNextContainer();
+    const firstRegion = this.getNextContainer();
     await this.addElementAcrossRegions(content, firstRegion);
 
     this.emitProgress('done');
@@ -313,16 +285,12 @@ class FlowManager {
   // Keeps calling itself until there's no more content
   private async addElementAcrossRegions(
     content: HTMLElement,
-    initialRegion: OverflowDetectingContainer,
+    initialRegion: OverflowDetector,
   ) {
     const result = await this.addElement(content, undefined, initialRegion);
     if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
-      const nextRegion = this.config.getNextContainer();
+      const nextRegion = this.getNextContainer();
       await this.addElementAcrossRegions(result.remainder, nextRegion);
     }
   }
 }
-
-
-
-export default FlowManager;

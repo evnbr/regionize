@@ -1,4 +1,4 @@
-import { RegionizeConfig } from './types';
+import { TraverseHandler } from './types';
 import { isElement, isTextNode } from './guards';
 import { isAllWhitespace } from './stringUtils';
   
@@ -25,7 +25,7 @@ const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
 
 export const findValidSplit = (
   original: SplitSiblingResult,
-  canSplitBetween: RegionizeConfig["canSplitBetween"]
+  canSplitBetween: TraverseHandler["canSplitBetween"]
 ): SplitSiblingResult => {
   let proposed = original;
 

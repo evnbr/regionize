@@ -18,14 +18,6 @@ export const isScript = (node: Element): boolean => {
   return node.tagName === 'SCRIPT';
 };
 
-export const isImage = (node: Element): node is HTMLImageElement => {
-  return node.tagName === 'IMG';
-};
-
-export const isUnloadedImage = (node: Element): node is HTMLImageElement => {
-  return isImage(node) && !node.naturalWidth;
-};
-
 export const isContentElement = (node: Node): node is HTMLElement => {
   return isElement(node) && !isScript(node);
 };

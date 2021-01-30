@@ -1,9 +1,6 @@
-import Region from './Region';
-import FlowManager from './FlowManager';
-import {
-  RegionizeConfig,
-  AppendResult,
-} from './types';
+import { Region } from './Region';
+import { Traverser } from './Traverser';
+import { RegionizeConfig, AppendResult } from './types';
 
 const flowIntoRegions = async (
   content: HTMLElement,
@@ -11,8 +8,8 @@ const flowIntoRegions = async (
 ): Promise<void> => {
   if (!content) throw Error('Content not specified');
 
-  const flow = new FlowManager(opts);
-  await flow.addAcrossRegions(content);
+  const t = new Traverser(opts);
+  await t.addAcrossRegions(content);
 };
 
 const addUntilOverflow = async (
@@ -23,8 +20,8 @@ const addUntilOverflow = async (
   if (!content) throw Error('Content not specified');
 
   const region = new Region(container);
-  const flow = new FlowManager(opts);
-  return await flow.addElement(content, undefined, region);
+  const t = new Traverser(opts);
+  return await t.addElement(content, undefined, region);
 };
 
 export { Region, flowIntoRegions, addUntilOverflow };

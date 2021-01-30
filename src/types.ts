@@ -15,8 +15,6 @@ type PartialNodeAppendResult = {
 
 export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
 
-export type AsyncRuleApplier = (el: HTMLElement) => Promise<any> | undefined;
-
 export type SplitRuleApplier = (
   original: HTMLElement,
   clone: HTMLElement,
@@ -34,20 +32,28 @@ export interface RegionizeProgressEvent {
   imageWaitTime?: number;
 }
 
-export interface OverflowDetectingContainer {
+export interface OverflowDetector {
   readonly element: HTMLElement;
   append(...nodes: (string | Node)[]): void;
   hasOverflowed(): boolean;
 }
 
 export interface RegionizeConfig {
-  getNextContainer: () => OverflowDetectingContainer;
+  getNextContainer: () => OverflowDetector;
+  onProgress: (e: RegionizeProgressEvent) => void;
+  plugins: RegionizePlugin[];
+}
+
+export interface TraverseHandler {
   canSplit: (el: HTMLElement) => boolean;
   canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
   shouldTraverse: (el: HTMLElement) => boolean;
-  onAddStart: AsyncRuleApplier;
-  onAddFinish: AsyncRuleApplier;
-  onAddCancel: AsyncRuleApplier;
-  onProgress: (e: RegionizeProgressEvent) => void;
+  onAddStart: (el: HTMLElement) => Promise<any>;
+  onAddFinish: (el: HTMLElement) => Promise<any>;
+  onAddCancel: (el: HTMLElement) => Promise<any>;
   onSplit: SplitRuleApplier;
+}
+
+export interface RegionizePlugin extends Readonly<Partial<TraverseHandler>> {
+  readonly selector?: string;
 }

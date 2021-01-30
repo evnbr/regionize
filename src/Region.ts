@@ -1,7 +1,7 @@
-import { OverflowDetectingContainer } from './types';
+import { OverflowDetector } from './types';
 import { setIsRegion } from './attributeHelper';
 
-class Region implements OverflowDetectingContainer {
+export class Region implements OverflowDetector {
   element: HTMLElement;
   initialgetContainerHeight: Number;
   private measurementWrapper: HTMLElement;
@@ -61,5 +61,3 @@ class Region implements OverflowDetectingContainer {
     return this.overflowAmount() > -5;
   }
 }
-
-export default Region;
