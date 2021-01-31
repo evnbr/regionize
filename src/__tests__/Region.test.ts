@@ -1,4 +1,4 @@
-import Region from '../Region';
+import { Region } from '../Region';
 import * as dom from './dom-test-helper';
 
 const setMockHeight = (el: Element, fakeHeight: number) => {

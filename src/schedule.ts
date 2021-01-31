@@ -1,4 +1,4 @@
-const maxWorkTimePerFrame = 30; // ms
+const MAX_WORK_MS = 30;
 
 const nextFrame = (): Promise<number> =>
   new Promise(resolve => {
@@ -9,7 +9,7 @@ let lastYieldTime = 0;
 
 export const shouldYield = (): boolean => {
   const timeSinceYield = performance.now() - lastYieldTime;
-  return timeSinceYield > maxWorkTimePerFrame;
+  return timeSinceYield > MAX_WORK_MS;
 };
 
 export const yieldIfNeeded = async (): Promise<void> => {

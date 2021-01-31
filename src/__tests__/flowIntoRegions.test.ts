@@ -1,5 +1,5 @@
 import { flowIntoRegions } from '../index';
-import { OverflowDetectingContainer } from '../types';
+import { OverflowDetector } from '../types';
 import { h, div, span, p, section } from './dom-test-helper';
 import OverflowSimulator from './OverflowSimulator';
 
@@ -20,7 +20,7 @@ const allText = (regions: any) =>
 test('Preserves content order (10char overflow)', async () => {
   const a = div('A content.', p('B content.', span('C content.')));
 
-  const regions: OverflowDetectingContainer[] = [];
+  const regions: OverflowDetector[] = [];
   const getNextContainer = () => {
     const r = new OverflowSimulator(el => el.textContent!.length > 10);
     regions.push(r);
@@ -68,7 +68,7 @@ test('Split elements over many pages (100char overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions: OverflowDetectingContainer[] = [];
+  const regions: OverflowDetector[] = [];
   const getNextContainer = () => {
     const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
@@ -96,7 +96,7 @@ test('Split elements over many pages (5children overflow)', async () => {
     content.appendChild(e);
   }
 
-  const regions: OverflowDetectingContainer[] = [];
+  const regions: OverflowDetector[] = [];
   const getNextContainer = () => {
     const r = new OverflowSimulator(el => {
       const count = (el.querySelectorAll('*') || []).length;
@@ -124,14 +124,14 @@ test('Spreads elements over many pages without splitting any (100char overflow)'
   }
 
   const canSplit = (el: HTMLElement) => !el.matches('p');
-  const regions: OverflowDetectingContainer[] = [];
+  const regions: OverflowDetector[] = [];
   const getNextContainer = () => {
     const r = new OverflowSimulator(el => el.textContent!.length > 100);
     regions.push(r);
     return r;
   };
 
-  await flowIntoRegions(content, { getNextContainer, canSplit });
+  await flowIntoRegions(content, { getNextContainer, plugins: [{ canSplit }] });
   expect(regions.length).toBe(3);
 
   const endParagraphCount = regions
@@ -157,7 +157,7 @@ test("Shifts appropriate parent if can't split", async () => {
     splittableWrap.append(el);
   }
 
-  const regions: OverflowDetectingContainer[] = [];
+  const regions: OverflowDetector[] = [];
   const getNextContainer = () => {
     const r = new OverflowSimulator(el => {
       const count = (el.querySelectorAll('*') || []).length;

@@ -1,7 +1,7 @@
 import { isSplit } from '../attributeHelper';
-import type { RegionizePlugin } from '../types';
+import type { Plugin } from '../types';
 
-export const PreserveListNumbering: RegionizePlugin = {
+export const PreserveListNumbering: Plugin = {
   selector: 'ol',
   onSplit: (original: HTMLElement, remainder: HTMLElement) => {
     // restart numbering

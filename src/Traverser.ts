@@ -1,11 +1,10 @@
 import {
-  RegionizeConfig,
   AppendStatus,
   AppendResult,
   ProgressEventName,
   OverflowDetector,
   TraverseHandler,
-  RegionizeProgressEvent
+  ProgressEvent
 } from './types';
 
 import { isTextNode, isContentElement, isElement } from './guards';
@@ -13,11 +12,9 @@ import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
 import { findValidSplit, SplitSiblingResult } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from './attributeHelper';
 import ProgressEstimator from './ProgressEstimator';
-import { PluginManager } from './plugins/PluginManager';
 
-const createRegionFallback = () => {
-  throw Error('createRegion not specified');
-}
+const createRegionFallback = () => { throw Error('createRegion not specified') };
+
 const noop = () => {};
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
@@ -25,14 +22,12 @@ const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
 export class Traverser {
   estimator?: ProgressEstimator; // initialized in addAcrossRegions
-  plugins: TraverseHandler;
-  getNextContainer: () => OverflowDetector; 
-  progressCallback: (e: RegionizeProgressEvent) => void;
+  handler: TraverseHandler;
+  getNextContainer: () => OverflowDetector = createRegionFallback; 
+  progressCallback: (e: ProgressEvent) => void = noop;
 
-  constructor(opts: Partial<RegionizeConfig>) {
-    this.getNextContainer = opts.getNextContainer ?? createRegionFallback,
-    this.progressCallback = opts.onProgress ?? noop;
-    this.plugins = new PluginManager(opts.plugins ?? []);
+  constructor(handler: TraverseHandler) {
+    this.handler = handler;
   }
 
   private emitProgress(eventName: ProgressEventName) {
@@ -68,7 +63,7 @@ export class Traverser {
     //   tableRowRule(original, remainder, cloneWithRules);
     // }
     setIsSplit(remainder);
-    this.plugins.onSplit(
+    this.handler.onSplit(
       original,
       remainder,
       remainder.firstElementChild as HTMLElement,
@@ -77,7 +72,7 @@ export class Traverser {
   }
 
   private canSplit(element: HTMLElement, region: OverflowDetector): boolean {
-    if (!this.plugins.canSplit(element)) {
+    if (!this.handler.canSplit(element)) {
       return false;
     }
     if (element === region.element) {
@@ -96,7 +91,7 @@ export class Traverser {
       // TODO: Could optimize this to instead call ensureImageLoaded earlier?
       // return true;
     // }
-    if (this.plugins.shouldTraverse(element)) {
+    if (this.handler.shouldTraverse(element)) {
       // The caller has indicated the region size could change as a result of traversing the elements,
       // for example if a footnote would be added that eats into the available space for content.
       // If so, checking for overflow is not accurate.
@@ -134,14 +129,14 @@ export class Traverser {
   }
 
   private splitSiblings(proposed: SplitSiblingResult): SplitSiblingResult {
-    const siblings = findValidSplit(proposed, this.plugins.canSplitBetween);
+    const siblings = findValidSplit(proposed, this.handler.canSplitBetween.bind(this.handler));
 
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
         // TODO: safely remove recursively
         // TODO: called twice because child may already hace been removed.
         sib.remove();
-        this.plugins.onAddCancel(sib);
+        this.handler.onAddCancel(sib);
         // console.log(sib);
       }
     }
@@ -213,7 +208,7 @@ export class Traverser {
 
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
-      await this.plugins.onAddStart(element);
+      await this.handler.onAddStart(element);
     }
 
     const parent = parentEl ?? region;
@@ -222,6 +217,7 @@ export class Traverser {
     const hasOverflowed = region.hasOverflowed();
 
     if (hasOverflowed && !this.canSplit(element, region)) {
+
       // If we can't clear and traverse children, we already know it doesn't fit.
       return this.cancelAndCreateNoneResult(element);
     }
@@ -234,7 +230,7 @@ export class Traverser {
     }
 
     // Success, we finished adding this entire element without overflowing the region.
-    await this.plugins.onAddFinish(element);
+    await this.handler.onAddFinish(element);
     this.estimator?.incrementAddedCount();
     this.emitProgress('inProgress');
 
@@ -262,20 +258,20 @@ export class Traverser {
       element.append(...contentsToRestore);
     }
 
-    this.plugins.onAddCancel(element);
+    this.handler.onAddCancel(element);
 
     return {
       status: AppendStatus.ADDED_NONE,
     };
   }
 
-
   // Wraps addElementAcrossRegions with an estimator for convenience
-  async addAcrossRegions(content: HTMLElement): Promise<void> {
+  async addAcrossRegions(content: HTMLElement, getNext: () => OverflowDetector): Promise<void> {
+    this.getNextContainer = getNext;
+
     this.estimator = new ProgressEstimator(
       content.querySelectorAll('*').length,
     );
-
     const firstRegion = this.getNextContainer();
     await this.addElementAcrossRegions(content, firstRegion);
 

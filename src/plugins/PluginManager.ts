@@ -1,13 +1,13 @@
 import { EnsureImageLoaded } from './EnsureImageLoaded';
 import { PreserveListNumbering } from './PreserveListNumbering';
-import { RegionizePlugin, TraverseHandler } from '../types';
+import { Plugin, TraverseHandler } from '../types';
   
 const DEFAULT_PLUGINS = [
   EnsureImageLoaded,
   PreserveListNumbering,
 ];
 
-const shouldRun = (p: RegionizePlugin, el: HTMLElement) => {
+const shouldRun = (p: Plugin, el: HTMLElement) => {
   return !p.selector || el.matches(p.selector)
 }
 
@@ -15,9 +15,9 @@ type Key = keyof TraverseHandler;
 type Handler<T extends Key> = TraverseHandler[T];
 
 export class PluginManager implements TraverseHandler {
-  private plugins: RegionizePlugin[];
+  private plugins: Plugin[];
 
-  constructor(plugins: RegionizePlugin[]) {
+  constructor(plugins: Plugin[]) {
     this.plugins = [...DEFAULT_PLUGINS, ...plugins];
   }
 
@@ -30,13 +30,13 @@ export class PluginManager implements TraverseHandler {
   // Defaults true, unless any plugin returns false
   canSplit(el: HTMLElement): boolean {
     const fns = this.getHandlers('canSplit', el);
-    return !fns.every(f => f(el));
+    return fns.every(f => f(el));
   }
 
   // Defaults true, unless any plugin returns false
   canSplitBetween(el: HTMLElement, next: HTMLElement): boolean {
     const fns = this.getHandlers('canSplitBetween', el);
-    return !fns.every(f => f(el, next));
+    return fns.every(f => f(el, next));
   }
 
   // Defaults false, unless any plugin returns true

@@ -24,7 +24,7 @@ export type SplitRuleApplier = (
 
 export type ProgressEventName = 'inProgress' | 'imageLoading' | 'done';
 
-export interface RegionizeProgressEvent {
+export interface ProgressEvent {
   state: ProgressEventName;
   estimatedProgress: number;
   imageName?: string;
@@ -38,12 +38,6 @@ export interface OverflowDetector {
   hasOverflowed(): boolean;
 }
 
-export interface RegionizeConfig {
-  getNextContainer: () => OverflowDetector;
-  onProgress: (e: RegionizeProgressEvent) => void;
-  plugins: RegionizePlugin[];
-}
-
 export interface TraverseHandler {
   canSplit: (el: HTMLElement) => boolean;
   canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
@@ -54,6 +48,6 @@ export interface TraverseHandler {
   onSplit: SplitRuleApplier;
 }
 
-export interface RegionizePlugin extends Readonly<Partial<TraverseHandler>> {
+export interface Plugin extends Readonly<Partial<TraverseHandler>> {
   readonly selector?: string;
 }

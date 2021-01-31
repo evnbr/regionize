@@ -19,11 +19,12 @@ const testCases = [
     name: 'Fixing indents',
     desc: 'Using onDidSplit to hide the duplicate indent',
     contentId: paragraphContent,
-    config: {
+    plugins: [{
+      selector: "'p'",
       onSplit: (el, remainder) => {
         remainder.style.textIndent = 0;
       },
-    },
+    }],
   },
   {
     id: 'list',

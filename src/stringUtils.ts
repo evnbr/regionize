@@ -1,6 +1,6 @@
 const SPACE = ' ';
 
-export const isAllWhitespace = (text: string) => text.trim() === '';
+export const isAllWhitespace = (text: string) => text.trim().length === 0;
 
 export const indexOfNextWordEnd = (text: string, startIndex: number): number => {
   let newIndex = startIndex + 1;

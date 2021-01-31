@@ -16,6 +16,10 @@ const prettyPrintConfig = (obj) => {
   return lines.length ? `{\n${lines.join(',\n')}\n}` : '{}';
 };
 
+const prettyPrintPlugins = (arr) => {
+  return arr && arr.length ? `[\n${arr.map(prettyPrintConfig).join(',\n')}\n]` : '[]';
+}
+
 const isNode = input => !!input && input.nodeType;
 const isString = input => !!input && typeof input === 'string';
 const isAppendable = input => isNode(input) || isString(input);
@@ -37,7 +41,7 @@ const h = (tagName, ...args) => {
   return el;
 };
 
-const setup = async ({ id, name, desc, contentId, config }) => {
+const setup = async ({ id, name, desc, contentId, plugins }) => {
   const rowFragment = document.querySelector('#row-template').content.cloneNode(true);
 
   
@@ -50,7 +54,7 @@ const setup = async ({ id, name, desc, contentId, config }) => {
   );
 
   const configHolder = item.querySelector('.config-slot');
-  configHolder.append(prettyPrintConfig(config));
+  configHolder.append(prettyPrintPlugins(plugins));
 
   const contentFrag = document.querySelector(`#${contentId}`).content;
   const content = item.querySelector('.content');
@@ -63,7 +67,7 @@ const setup = async ({ id, name, desc, contentId, config }) => {
 
   // console.log(`Starting ${id}`);
 
-  const result = await addUntilOverflow(content.cloneNode(true), container, config);
+  const result = await addUntilOverflow(content.cloneNode(true), container, { plugins });
   remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
 
   // console.log(`Finished ${id}`);

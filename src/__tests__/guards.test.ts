@@ -1,9 +1,9 @@
-import { isTextNode, isUnloadedImage, isContentElement } from '../guards';
+import { isTextNode, isContentElement } from '../guards';
 import * as dom from './dom-test-helper';
 
 const textNode = dom.text('sample');
 const div = dom.div();
-const img = dom.h('img');
+// const img = dom.h('img');
 const script = dom.h('script');
 
 test('isTextNode recognizes textNode', () => {
@@ -14,9 +14,9 @@ test('isTextNode rejects div', () => {
   expect(isTextNode(div)).toBe(false);
 });
 
-test('isUnloadedImage recognizes image', () => {
-  expect(isUnloadedImage(img)).toBe(true);
-});
+// test('isUnloadedImage recognizes image', () => {
+//   expect(isUnloadedImage(img)).toBe(true);
+// });
 
 test('isContentElement recognizes div', () => {
   expect(isContentElement(div)).toBe(true);
