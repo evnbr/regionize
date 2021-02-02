@@ -1,5 +1,5 @@
-import { OverflowDetector } from './types';
-import { setIsRegion } from './attributeHelper';
+import { OverflowDetector } from '../types';
+import { setIsRegion } from '../attributeHelper';
 
 export class Region implements OverflowDetector {
   element: HTMLElement;

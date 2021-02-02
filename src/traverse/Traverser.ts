@@ -1,51 +1,24 @@
 import {
   AppendStatus,
   AppendResult,
-  ProgressEventName,
   OverflowDetector,
   TraverseHandler,
-  ProgressEvent
-} from './types';
+} from '../types';
 
-import { isTextNode, isContentElement, isElement } from './guards';
+import { isTextNode, isContentElement, isElement } from '../guards';
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
 import { findValidSplit, SplitSiblingResult } from './splitSiblings';
-import { isSplit, setIsSplit, isInsideIgnoreOverflow } from './attributeHelper';
-import ProgressEstimator from './ProgressEstimator';
-
-const createRegionFallback = () => { throw Error('createRegion not specified') };
-
-const noop = () => {};
+import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
+import { ProgressEstimator, ProgressEvent } from './ProgressEstimator';
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
 export class Traverser {
-  estimator?: ProgressEstimator; // initialized in addAcrossRegions
   handler: TraverseHandler;
-  getNextContainer: () => OverflowDetector = createRegionFallback; 
-  progressCallback: (e: ProgressEvent) => void = noop;
 
   constructor(handler: TraverseHandler) {
     this.handler = handler;
-  }
-
-  private emitProgress(eventName: ProgressEventName) {
-    if (!this.estimator) return;
-    if (eventName === 'done') {
-      this.estimator.end();
-      this.progressCallback({
-        state: eventName,
-        estimatedProgress: 1,
-        totalTime: this.estimator.totalTime,
-        imageWaitTime: this.estimator.timeWaiting,
-      });
-    } else {
-      this.progressCallback({
-        state: eventName,
-        estimatedProgress: this.estimator.getPercentComplete(),
-      });
-    }
   }
 
   private applySplitRules(original: HTMLElement, remainder: HTMLElement) {
@@ -231,8 +204,6 @@ export class Traverser {
 
     // Success, we finished adding this entire element without overflowing the region.
     await this.handler.onAddFinish(element);
-    this.estimator?.incrementAddedCount();
-    this.emitProgress('inProgress');
 
     return {
       status: AppendStatus.ADDED_ALL,
@@ -265,17 +236,45 @@ export class Traverser {
     };
   }
 
-  // Wraps addElementAcrossRegions with an estimator for convenience
-  async addAcrossRegions(content: HTMLElement, getNext: () => OverflowDetector): Promise<void> {
-    this.getNextContainer = getNext;
+}
 
-    this.estimator = new ProgressEstimator(
-      content.querySelectorAll('*').length,
-    );
+const noop = () => {};
+
+export class MultiContainerTraverser extends Traverser {
+  private progressTracker: ProgressEstimator;
+  private getNextContainer: () => OverflowDetector; 
+
+  constructor(
+    handler: TraverseHandler,
+    getNextContainer: () => OverflowDetector,
+    progressCallback?: (e: ProgressEvent) => void,
+  ) {
+    super(handler);
+    this.getNextContainer = getNextContainer.bind(this);
+    this.progressTracker = new ProgressEstimator(progressCallback ?? noop);
+  }
+
+  async addElement(
+    element: HTMLElement,
+    parentEl: HTMLElement | undefined,
+    region: OverflowDetector,
+  ): Promise<AppendResult> {
+
+    let result = super.addElement(element, parentEl, region);
+
+    this.progressTracker.incrementAddedCount();
+
+    return result;
+  }
+
+  // Wraps with an estimator
+  async addAcrossContainers(content: HTMLElement): Promise<void> {
+    this.progressTracker.begin(content.querySelectorAll('*').length);
+
     const firstRegion = this.getNextContainer();
     await this.addElementAcrossRegions(content, firstRegion);
 
-    this.emitProgress('done');
+    this.progressTracker.end();
   }
 
   // Keeps calling itself until there's no more content
@@ -289,4 +288,5 @@ export class Traverser {
       await this.addElementAcrossRegions(result.remainder, nextRegion);
     }
   }
+
 }

@@ -1,7 +1,7 @@
 import { isSplit } from '../attributeHelper';
 import type { Plugin } from '../types';
 
-export const PreserveListNumbering: Plugin = {
+export const continueListNumbering = (): Plugin => ({
   selector: 'ol',
   onSplit: (original: HTMLElement, remainder: HTMLElement) => {
     // restart numbering
@@ -13,11 +13,11 @@ export const PreserveListNumbering: Plugin = {
     }
     const nextChild = remainder.firstElementChild;
     if (nextChild && nextChild.tagName === 'LI' && isSplit(nextChild)) {
-      // the first list item actually started in the previous region
+      // this list item actually started in the previous region
       prevStart -= 1;
     }
     const prevCount = original.children.length;
     const newStart = prevStart + prevCount;
     remainder.setAttribute('start', `${newStart}`);
   }
-};
+});

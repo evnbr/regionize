@@ -12,7 +12,11 @@ const reducedIndent = (obj) => {
 const prettyPrintConfig = (obj) => {
   const lines = Object
     .keys(obj)
-    .map(k => `  ${k}: ${reducedIndent(obj[k])}`);
+    .map((k) => {
+      const val = obj[k];
+      const prettyVal = reducedIndent(val);
+      return `  ${k}: ${prettyVal}`;
+    });
   return lines.length ? `{\n${lines.join(',\n')}\n}` : '{}';
 };
 
@@ -41,7 +45,7 @@ const h = (tagName, ...args) => {
   return el;
 };
 
-const setup = async ({ id, name, desc, contentId, plugins }) => {
+const setup = async ({ id, name, desc, contentId, config }) => {
   const rowFragment = document.querySelector('#row-template').content.cloneNode(true);
 
   
@@ -54,7 +58,7 @@ const setup = async ({ id, name, desc, contentId, plugins }) => {
   );
 
   const configHolder = item.querySelector('.config-slot');
-  configHolder.append(prettyPrintPlugins(plugins));
+  configHolder.append(prettyPrintConfig(config));
 
   const contentFrag = document.querySelector(`#${contentId}`).content;
   const content = item.querySelector('.content');
@@ -67,7 +71,7 @@ const setup = async ({ id, name, desc, contentId, plugins }) => {
 
   // console.log(`Starting ${id}`);
 
-  const result = await addUntilOverflow(content.cloneNode(true), container, { plugins });
+  const result = await addUntilOverflow(content.cloneNode(true), container, config);
   remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
 
   // console.log(`Finished ${id}`);

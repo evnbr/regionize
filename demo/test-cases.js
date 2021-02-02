@@ -1,3 +1,11 @@
+const {
+  clearIndents,
+  clearListIndicator,
+  continueListNumbering,
+  preventSplit,
+  keepTogether,
+} = window.Regionize.Plugins;
+
 const paragraphContent = 'paragraph-content';
 const listContent = 'list-content';
 const nestedContent = 'nested-content';
@@ -17,42 +25,43 @@ const testCases = [
   {
     id: 'indents',
     name: 'Fixing indents',
-    desc: 'Using onDidSplit to hide the duplicate indent',
+    desc: 'Using a plugin to hide the duplicate indent',
     contentId: paragraphContent,
-    plugins: [{
-      selector: "'p'",
-      onSplit: (el, remainder) => {
-        remainder.style.textIndent = 0;
-      },
-    }],
+    config: {
+      plugins: [
+        clearIndents('p'),
+      ],
+    },
   },
   {
     id: 'list',
     name: 'List items',
-    desc: 'Note that the list number repeats in the remainder',
+    desc: 'To the brower, splitting an element starts a new list with new numbering',
     contentId: listContent,
     config: {},
   },
   {
     id: 'list-onDidSplit',
     name: 'Fixing list style',
-    desc: 'Using onDidSplit to hide the duplicate number',
+    desc: 'Using plugins to continue the list as expected',
     contentId: listContent,
     config: {
-      onSplit: (el, remainder) => {
-        if (remainder.matches('li')) {
-          remainder.style.listStyleType = 'none';
-        }
-      },
+      plugins: [
+        continueListNumbering(),
+        clearListIndicator(),
+      ],
     },
   },
   {
     id: 'list-canSplit',
     name: 'Preventing split',
-    desc: 'Using canSplit to keep each item whole',
+    desc: 'Using preventSplit to keep each item whole',
     contentId: listContent,
     config: {
-      canSplit: el => !el.matches('li'),
+      plugins: [
+        continueListNumbering(),
+        preventSplit('li'),
+      ],
     },
   },
   {
@@ -65,23 +74,26 @@ const testCases = [
   {
     id: 'nest-styling',
     name: 'Styling a split',
-    desc: 'Using onSplit to zero out padding and borders. Note that onDidSplit runs after the split point has been determined— you can make arbitrary style changes, including adjusting the space available for content, but content will not reflow.',
+    desc: 'Using a custom onSplit plugin to zero out padding and borders. Note that onSplit runs after the split point has been determined— if you make style changes that adjust the space available for content, content will not reflow.',
     contentId: nestedContent,
     config: {
-      onSplit: (el, remainder) => {
-        if (el.matches('.bordered')) {
-          Object.assign(el.style, {
-            borderBottomWidth: 0,
-            paddingBottom: 0,
-            marginBottom: 0,
-          });
-          Object.assign(remainder.style, {
-            borderTopWidth: 0,
-            paddingTop: 0,
-            marginTop: 0,
-          });
-        }
-      },
+      plugins: [
+        {
+          selector: '.bordered',
+          onSplit: (el, remainder) => {
+            Object.assign(el.style, {
+              borderBottomWidth: 0,
+              paddingBottom: 0,
+              marginBottom: 0,
+            });
+            Object.assign(remainder.style, {
+              borderTopWidth: 0,
+              paddingTop: 0,
+              marginTop: 0,
+            });
+          },
+        },
+      ],
     },
   },
   {
@@ -150,15 +162,12 @@ const testCases = [
   {
     id: 'orphan-sibling-2',
     name: 'Fixing orphaned sibling',
-    desc: 'If regionize can\'t add a split between two elements, they both are moved to the next page.',
+    desc: 'You can use keepTogether to prevent a split between two selectors. If regionize can\'t add a split between two elements, it will back up and add a split in the earliest valid position, so that both are moved to the next page.',
     contentId: orphanHeadingContent,
     config: {
-      canSplitBetween: (el, next) => {
-        if (el.matches('h3')) {
-          return false;
-        }
-        return true;
-      },
+      plugins: [
+        keepTogether('h3', '*'),
+      ],
     },
   },
   {

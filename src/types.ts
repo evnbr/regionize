@@ -1,3 +1,10 @@
+
+export interface OverflowDetector {
+  readonly element: HTMLElement;
+  append(...nodes: (string | Node)[]): void;
+  hasOverflowed(): boolean;
+}
+
 export const enum AppendStatus {
   ADDED_ALL = 'all',
   ADDED_PARTIAL = 'partial',
@@ -21,22 +28,6 @@ export type SplitRuleApplier = (
   nextChild?: HTMLElement,
   cloner?: (el: HTMLElement) => HTMLElement,
 ) => void;
-
-export type ProgressEventName = 'inProgress' | 'imageLoading' | 'done';
-
-export interface ProgressEvent {
-  state: ProgressEventName;
-  estimatedProgress: number;
-  imageName?: string;
-  totalTime?: number;
-  imageWaitTime?: number;
-}
-
-export interface OverflowDetector {
-  readonly element: HTMLElement;
-  append(...nodes: (string | Node)[]): void;
-  hasOverflowed(): boolean;
-}
 
 export interface TraverseHandler {
   canSplit: (el: HTMLElement) => boolean;
