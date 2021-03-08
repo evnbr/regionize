@@ -25,12 +25,11 @@ export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
 export type SplitRuleApplier = (
   original: HTMLElement,
   clone: HTMLElement,
-  nextChild?: HTMLElement,
-  cloner?: (el: HTMLElement) => HTMLElement,
+  cloneWithRules: (el: HTMLElement) => HTMLElement,
 ) => void;
 
 export interface TraverseHandler {
-  canSplit: (el: HTMLElement) => boolean;
+  canSplitInside: (el: HTMLElement) => boolean;
   canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
   shouldTraverse: (el: HTMLElement) => boolean;
   onAddStart: (el: HTMLElement) => Promise<any>;

@@ -7,9 +7,8 @@ import {
 
 import { isTextNode, isContentElement, isElement } from '../guards';
 import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
-import { findValidSplit, SplitSiblingResult } from './splitSiblings';
+import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
-import { ProgressEstimator, ProgressEvent } from './ProgressEstimator';
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
@@ -29,50 +28,39 @@ export class Traverser {
       return clone;  
     };
 
-    // if (original.matches('ol')) {
-    //   orderedListRule(original, remainder);
-    // }
-    // if (original.matches('tr')) {
-    //   tableRowRule(original, remainder, cloneWithRules);
-    // }
     setIsSplit(remainder);
     this.handler.onSplit(
       original,
       remainder,
-      remainder.firstElementChild as HTMLElement,
       cloneWithRules,
     );
   }
 
-  private canSplit(element: HTMLElement, region: OverflowDetector): boolean {
-    if (!this.handler.canSplit(element)) {
+  private canSplitInside(element: HTMLElement, region: OverflowDetector): boolean {
+    if (!this.handler.canSplitInside(element)) {
       return false;
     }
     if (element === region.element) {
       return true;
     }
     if (element.parentElement) {
-      return this.canSplit(element.parentElement, region);
+      return this.canSplitInside(element.parentElement, region);
     }
     return true;
   }
 
   private shouldTraverseChildren(element: HTMLElement): boolean {
-    // if (element.querySelector('img')) {
-      // Since ensureImageLoaded() is only called when traversing, the size of the image may not be known yet.
-      // Checking for overflow will not accurate, so traverse to be safe.
-      // TODO: Could optimize this to instead call ensureImageLoaded earlier?
-      // return true;
-    // }
     if (this.handler.shouldTraverse(element)) {
       // The caller has indicated the region size could change as a result of traversing the elements,
-      // for example if a footnote would be added that eats into the available space for content.
+      // for example if an image needs to be loaded and measured, or if a footnote would be added
+      // that eats into the available space for content,
       // If so, checking for overflow is not accurate.
       return true;
     }
     return false;
   }
 
+  // TODO: Can we conect to progress estimator?
   // private async ensureImageLoaded(img: HTMLImageElement) {
   //   this.emitProgress('imageLoading');
   //   const waitTime = await ensureImageLoaded(img);
@@ -81,7 +69,7 @@ export class Traverser {
   // }
 
   private async addText(textNode: Text, parent: HTMLElement, region: OverflowDetector) {
-    const shouldSplitText = this.canSplit(parent, region) && !isInsideIgnoreOverflow(parent);
+    const shouldSplitText = this.canSplitInside(parent, region) && !isInsideIgnoreOverflow(parent);
 
     if (shouldSplitText) {
       return await addTextUntilOverflow(textNode, parent, region.hasOverflowed);
@@ -101,16 +89,15 @@ export class Traverser {
     return this.addElement(child, parent, region);
   }
 
-  private splitSiblings(proposed: SplitSiblingResult): SplitSiblingResult {
+  private splitSiblings(proposed: SiblingSplitPoint): SiblingSplitPoint {
     const siblings = findValidSplit(proposed, this.handler.canSplitBetween.bind(this.handler));
 
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
         // TODO: safely remove recursively
-        // TODO: called twice because child may already hace been removed.
+        // TODO: potentially called twice because child may already hace been removed.
         sib.remove();
         this.handler.onAddCancel(sib);
-        // console.log(sib);
       }
     }
 
@@ -136,14 +123,17 @@ export class Traverser {
     }
 
     while (remainingChildren.length > 0) {
-      // pop the first child off. TODO: should we use shift()?
+      // pop the first child off
       const child = remainingChildren.shift()!;
 
       let childResult = await this.addChild(child, element, region);
 
       switch (childResult.status) {
         case AppendStatus.ADDED_NONE:
-          const siblings = this.splitSiblings({ added: [...element.childNodes], remainders: [child] });
+          const siblings = this.splitSiblings({
+            added: [...element.childNodes],
+            remainders: [child]
+          });
           const overflowingChildren = [...siblings.remainders, ...remainingChildren];
 
           if (element.childNodes.length == 0) {
@@ -174,13 +164,9 @@ export class Traverser {
     region: OverflowDetector,
   ): Promise<AppendResult> {
 
-    // if (isUnloadedImage(element)) {
-      // Measurements aren't valid yet
-      // await this.ensureImageLoaded(element);
-    // }
-
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
+      // TODO: log progress if this is an image.
       await this.handler.onAddStart(element);
     }
 
@@ -189,7 +175,7 @@ export class Traverser {
 
     const hasOverflowed = region.hasOverflowed();
 
-    if (hasOverflowed && !this.canSplit(element, region)) {
+    if (hasOverflowed && !this.canSplitInside(element, region)) {
 
       // If we can't clear and traverse children, we already know it doesn't fit.
       return this.cancelAndCreateNoneResult(element);
@@ -234,59 +220,6 @@ export class Traverser {
     return {
       status: AppendStatus.ADDED_NONE,
     };
-  }
-
-}
-
-const noop = () => {};
-
-export class MultiContainerTraverser extends Traverser {
-  private progressTracker: ProgressEstimator;
-  private getNextContainer: () => OverflowDetector; 
-
-  constructor(
-    handler: TraverseHandler,
-    getNextContainer: () => OverflowDetector,
-    progressCallback?: (e: ProgressEvent) => void,
-  ) {
-    super(handler);
-    this.getNextContainer = getNextContainer.bind(this);
-    this.progressTracker = new ProgressEstimator(progressCallback ?? noop);
-  }
-
-  async addElement(
-    element: HTMLElement,
-    parentEl: HTMLElement | undefined,
-    region: OverflowDetector,
-  ): Promise<AppendResult> {
-
-    let result = super.addElement(element, parentEl, region);
-
-    this.progressTracker.incrementAddedCount();
-
-    return result;
-  }
-
-  // Wraps with an estimator
-  async addAcrossContainers(content: HTMLElement): Promise<void> {
-    this.progressTracker.begin(content.querySelectorAll('*').length);
-
-    const firstRegion = this.getNextContainer();
-    await this.addElementAcrossRegions(content, firstRegion);
-
-    this.progressTracker.end();
-  }
-
-  // Keeps calling itself until there's no more content
-  private async addElementAcrossRegions(
-    content: HTMLElement,
-    initialRegion: OverflowDetector,
-  ) {
-    const result = await this.addElement(content, undefined, initialRegion);
-    if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
-      const nextRegion = this.getNextContainer();
-      await this.addElementAcrossRegions(result.remainder, nextRegion);
-    }
   }
 
 }

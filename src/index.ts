@@ -1,11 +1,15 @@
 import { PluginManager } from './plugins/PluginManager';
-import { Traverser, MultiContainerTraverser } from './traverse/Traverser';
+import { Traverser } from './traverse/Traverser';
+import { MultiContainerTraverser } from './traverse/MultiContainerTraverser';
 import type { ProgressEvent }  from './traverse/ProgressEstimator';
 import { OverflowDetector, AppendResult, Plugin } from './types';
 import { Region } from './region/Region';
 
+const missingInputError = (name: string) => {
+  return new Error(`Regionize: Required option '${name}' not specified`);
+}
 
-export interface FlowOptions {
+export interface AddAcrossOptions {
   content: HTMLElement,
   getNextContainer: () => OverflowDetector;
   onProgress?: (e: ProgressEvent) => void;
@@ -13,19 +17,16 @@ export interface FlowOptions {
 }
 
 export async function addAcrossContainers (
-  options: FlowOptions
+  { content, getNextContainer, plugins, onProgress }: AddAcrossOptions
 ): Promise<void> {
-  if (!options.content) throw Error('Content not specified');
-  if (!options.getNextContainer) throw Error('getNextContainer not specified');
 
-  const handler = new PluginManager(options.plugins ?? []);
-  const traverser = new MultiContainerTraverser(
-    handler,
-    options.getNextContainer,
-    options.onProgress
-  );
+  if (!content) throw missingInputError('content');
+  if (!getNextContainer) throw missingInputError('getNextContainer');
 
-  await traverser.addAcrossContainers(options.content);
+  const handler = new PluginManager(plugins ?? []);
+  const traverser = new MultiContainerTraverser(handler, getNextContainer, onProgress);
+
+  await traverser.addAcrossContainers(content);
 };
 
 
@@ -36,11 +37,10 @@ export interface Options {
 }
 
 export async function addUntilOverflow(
-  options: Options
+  { content, container, plugins }: Options
 ): Promise<AppendResult> {
-  const { content, container, plugins } = options;
-  if (!content) throw Error('Content not specified');
-  if (!container) throw Error('Container not specified');
+  if (!content) throw missingInputError('content');
+  if (!container) throw missingInputError('container');
 
   const region = new Region(container);
   const handler = new PluginManager(plugins ?? []);

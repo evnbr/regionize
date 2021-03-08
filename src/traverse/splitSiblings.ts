@@ -3,7 +3,7 @@ import { isElement, isTextNode } from '../guards';
 import { isAllWhitespace } from './stringUtils';
   
 
-export interface SplitSiblingResult {
+export interface SiblingSplitPoint {
   added: ChildNode[];
   remainders: ChildNode[];
 }
@@ -24,35 +24,35 @@ const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
 }
 
 export const findValidSplit = (
-  original: SplitSiblingResult,
+  original: SiblingSplitPoint,
   canSplitBetween: TraverseHandler['canSplitBetween']
-): SplitSiblingResult => {
-  let proposed = original;
+): SiblingSplitPoint => {
+  let splitPoint = original;
 
-  while (proposed.added.length > 0) {
-    const { added, remainders } = proposed;
+  while (splitPoint.added.length > 0) {
+    const { added, remainders } = splitPoint;
 
     const prevEl = getLastContentNode(added);
     const nextEl = getFirstContentNode(remainders);
   
     if (!nextEl || !prevEl || !isElement(nextEl) || !isElement(prevEl)) {
-      // Breaks that are not between two HTMLElements cannot be prevented
-      return proposed;
+      // If we are not between two HTMLElements, the split can be considered valid.
+      // Plugins to prevent split can only run on elements. 
+      return splitPoint;
     }
   
     if (canSplitBetween(prevEl, nextEl)) {
-      return proposed;
+      return splitPoint;
     }
     
     // try removing the last node and adding it to the remainder
     const shifted = added.pop()!;
-    proposed = {
+    splitPoint = {
       added: [...added],
       remainders: [shifted, ...remainders]
     };
   }
 
-  // Couldn't add anything
-  return proposed;
+  // Couldn't add anything, proposed.added is empty
+  return splitPoint;
 }
-  
