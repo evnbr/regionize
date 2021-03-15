@@ -1,9 +1,9 @@
 
           <div>
             <h4 class="fg-blue">Container</h4>
-            <div class="region box" data-region="true">
+            <div class="sized-container box" data-region="true">
             <div class="region-measured-content" style="position: relative;"><div class="content box">
-            
+              
       <h3>Paragraphs</h3>
       <p>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
