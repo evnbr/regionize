@@ -1,15 +1,16 @@
 import { ensureImageLoaded } from './ensureImageLoaded';
-import { Plugin, TraverseHandler } from '../types';
+import { Plugin, TraverseEvent, TraverseHandler } from '../types';
   
 const DEFAULT_PLUGINS = [
   ensureImageLoaded(),
 ];
 
-function notUndefined<T>(x: T | undefined): x is T {
-  return x !== undefined;
+async function runInSequence<T>(
+  asyncFns: Array<(arg: T) => Promise<any>>,
+  arg: T,
+) {
+  for (let f of asyncFns) await f(arg);
 }
-
-type Func<K extends keyof TraverseHandler> = TraverseHandler[K];
 
 // A class that exposes a consistent interface
 // over a list of plugins, combining the results as
@@ -21,28 +22,34 @@ export class PluginManager implements TraverseHandler {
     this.plugins = [...DEFAULT_PLUGINS, ...plugins];
   }
 
-  matchingPlugins<K extends keyof TraverseHandler>(key: K, el: HTMLElement): Func<K>[] {
+  private handlersFor<Ev extends TraverseEvent>(
+    eventName: Ev,
+    el: HTMLElement
+  ): TraverseHandler[Ev][] {
     return this.plugins
-      .filter(p => p[key] && (!p.selector || el.matches(p.selector)))
-      .map(p => p[key]) as Func<K>[]; // cast is ok because filter checks against undefined
+      .filter(p => p[eventName] && (!p.selector || el.matches(p.selector)))
+      .map(p => p[eventName] as TraverseHandler[Ev]);
   }
 
   // Defaults true, unless any plugin returns false
   canSplitInside(el: HTMLElement): boolean {
-    const fns = this.matchingPlugins('canSplitInside', el);
-    return fns.every(f => f(el));
+    return this
+      .handlersFor(TraverseEvent.canSplitInside, el)
+      .every(can => can(el));
   }
 
   // Defaults true, unless any plugin returns false
   canSplitBetween(el: HTMLElement, next: HTMLElement): boolean {
-    const fns = this.matchingPlugins('canSplitBetween', el);
-    return fns.every(f => f(el, next));
+    return this
+      .handlersFor(TraverseEvent.canSplitBetween, el)
+      .every(can => can(el, next));
   }
 
   // Defaults false, unless any plugin returns true
   shouldTraverse(el: HTMLElement): boolean {
-    const fns = this.matchingPlugins('shouldTraverse', el);
-    return fns.some(f => f(el));
+    return this
+      .handlersFor(TraverseEvent.shouldTraverse, el)
+      .some(should => should(el));
   }
 
   // Runs all plugins synchronously
@@ -51,25 +58,19 @@ export class PluginManager implements TraverseHandler {
     remainder: HTMLElement,
     cloneWithRules: (el: HTMLElement) => HTMLElement
   ) {
-    const fns = this.matchingPlugins('onSplit', el);
-    for (let f of fns) f(el, remainder, cloneWithRules);
+    const fns = this.handlersFor(TraverseEvent.onSplit, el);
+    for (let fn of fns) fn(el, remainder, cloneWithRules);
   }
 
-  // Await plugins in sequence
   async onAddStart(el: HTMLElement) {
-    const fns = this.matchingPlugins('onAddStart', el);
-    for (let f of fns) await f(el);
+    await runInSequence(this.handlersFor(TraverseEvent.onAddStart, el), el);
   }
 
-  // Await plugins in sequence
   async onAddFinish(el: HTMLElement) {
-    const fns = this.matchingPlugins('onAddFinish', el);
-    for (let f of fns) await f(el);
+    await runInSequence(this.handlersFor(TraverseEvent.onAddFinish, el), el);
   }
 
-  // Await plugins in sequence
   async onAddCancel(el: HTMLElement) {
-    const fns = this.matchingPlugins('onAddCancel', el);
-    for (let f of fns) await f(el);
+    await runInSequence(this.handlersFor(TraverseEvent.onAddCancel, el), el);
   }
 }

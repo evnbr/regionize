@@ -131,8 +131,7 @@ nav {
   padding: 4px 8px;
 }
 
-
-.region {
+.sized-container {
   border: 1px solid var(--blue);
   background: white;
   height: 300px;

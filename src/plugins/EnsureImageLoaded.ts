@@ -30,13 +30,18 @@ const pollForImageSize = async (image: HTMLImageElement): Promise<number> => {
   return performance.now() - imgLoadStartTime;
 };
 
-// No selector, so this rule runs on every element. Any parent
-// containing an unloaded image could change size. Only begin 
-// polling when we're currenly adding an unloaded image
+
 export const ensureImageLoaded = (): Plugin => ({
-  shouldTraverse: el => !!el.querySelector('img'),
+  shouldTraverse: (el) => {
+    // Any parent containing an unloaded image could change
+    // size, and must be traversed to trigger onAddStart.
+    const img = el.querySelector('img');
+    return !!img && isUnloadedImage(img);
+  },
   onAddStart: async (el) => {
     if (isUnloadedImage(el)) {
+      // This will be called on every element. Only begin polling when 
+      // we're currenly adding an unloaded image
       await pollForImageSize(el);
     }
   }

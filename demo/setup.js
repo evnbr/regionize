@@ -1,11 +1,10 @@
 const { addUntilOverflow } = window.Regionize;
 const items = window.testCases;
 
-const reducedIndent = (obj) => {
-  // everything but the first line of functions has 4 extra indents
-  const lines = obj.toString().split('\n');
+const reducedIndent = (orginal) => {
+  const lines = orginal.split('\n');
   return lines
-    .map((str, lineIndex) => (lineIndex > 0 ? str.substring(4) : str))
+    .map((str => str.substring(2)))
     .join('\n');
 };
 
@@ -20,9 +19,19 @@ const prettyPrintConfig = (obj) => {
   return lines.length ? `{\n${lines.join(',\n')}\n}` : '{}';
 };
 
-const prettyPrintPlugins = (arr) => {
-  return arr && arr.length ? `[\n${arr.map(prettyPrintConfig).join(',\n')}\n]` : '[]';
-}
+const prettyPrintPlugins = (getter) => {
+  const lines = getter
+    .toString()
+    .split('\n')
+    .slice(1, -1)
+    .join('\n');
+  const reduced = reducedIndent(lines);
+  return `[\n${reduced}\n  ]`;
+};
+
+// const prettyPrintPlugins = (arr) => {
+//   return arr && arr.length ? `[\n${arr.map(prettyPrintConfig).join(',\n')}\n]` : '[]';
+// }
 
 const isNode = input => !!input && input.nodeType;
 const isString = input => !!input && typeof input === 'string';
@@ -45,7 +54,7 @@ const h = (tagName, ...args) => {
   return el;
 };
 
-const setup = async ({ id, name, desc, contentId, config }) => {
+const setup = async ({ id, name, desc, contentId, getPlugins }) => {
   const rowFragment = document.querySelector('#row-template').content.cloneNode(true);
 
   
@@ -58,7 +67,7 @@ const setup = async ({ id, name, desc, contentId, config }) => {
   );
 
   const configHolder = item.querySelector('.config-slot');
-  configHolder.append(prettyPrintConfig(config));
+  configHolder.append(prettyPrintPlugins(getPlugins));
 
   const contentFrag = document.querySelector(`#${contentId}`).content;
   const content = item.querySelector('.content');
@@ -66,12 +75,16 @@ const setup = async ({ id, name, desc, contentId, config }) => {
 
   document.body.append(item);
 
-  const container = item.querySelector('.region');
+  const container = item.querySelector('.sized-container');
   const remainderContainer = item.querySelector('.remainder');
 
   // console.log(`Starting ${id}`);
 
-  const result = await addUntilOverflow(content.cloneNode(true), container, config);
+  const result = await addUntilOverflow({
+    content: content.cloneNode(true),
+    container,
+    plugins: getPlugins(),
+  });
   remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
 
   // console.log(`Finished ${id}`);

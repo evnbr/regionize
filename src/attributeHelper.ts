@@ -1,12 +1,8 @@
-const IS_REGION_ATTR = 'data-region';
-const IS_SPLIT_ATTR = 'data-region-split';
-const IGNORE_OVERFLOW_ATTER = 'data-ignore-overflow';
-
 // ------
 //
 // Utils
 
-// Util to add/remove atribute rather than set boolean strng
+// Actually add/remove atribute rather than set boolean strng
 const toggleAttr = (el: Element, attr: string, newVal = true) => {
   if (newVal) {
     el.setAttribute(attr, 'true');
@@ -37,6 +33,8 @@ const isInsideElementMatching = (el: Element, cb: ((el: Element) => boolean)): b
 //
 // Is Split
 
+const IS_SPLIT_ATTR = 'data-region-split';
+
 export const isSplit = (el: Element) => {
   return el.hasAttribute(IS_SPLIT_ATTR);
 };
@@ -48,6 +46,8 @@ export const setIsSplit = (el: Element, newVal = true) => {
 // ------
 //
 // Is Region
+
+const IS_REGION_ATTR = 'data-region';
 
 export const isRegion = (el: Element) => {
   return el.hasAttribute(IS_REGION_ATTR);
@@ -61,12 +61,14 @@ export const setIsRegion = (el: Element, newVal = true) => {
 //
 // Ignore Overflow
 
+const IGNORE_OVERFLOW_ATTR = 'data-ignore-overflow';
+
 export const isIgnoreOverflow = (el: Element) => {
-  return el.hasAttribute(IGNORE_OVERFLOW_ATTER);
+  return el.hasAttribute(IGNORE_OVERFLOW_ATTR);
 };
 
 export const setIgnoreOverflow = (el: Element, newVal = true) => {
-  toggleAttr(el, IGNORE_OVERFLOW_ATTER, newVal);
+  toggleAttr(el, IGNORE_OVERFLOW_ATTR, newVal);
 };
 
 export const isInsideIgnoreOverflow = (element: HTMLElement): boolean => {

@@ -11,13 +11,16 @@ export const continueListNumbering = (): Plugin => ({
       // the OL doesn't start from 1 either
       prevStart = parseInt(original.getAttribute('start')!, 10);
     }
+
+    let prevCountItemsAdded = original.children.length;
     const nextChild = remainder.firstElementChild;
     if (nextChild && nextChild.tagName === 'LI' && isSplit(nextChild)) {
-      // this list item actually started in the previous region
-      prevStart -= 1;
+      // the last list item didn't fully fit, some remainder
+      // will be added to the next region. the remainder should
+      // not have an incremented item number. 
+      prevCountItemsAdded -= 1;
     }
-    const prevCount = original.children.length;
-    const newStart = prevStart + prevCount;
+    const newStart = prevStart + prevCountItemsAdded;
     remainder.setAttribute('start', `${newStart}`);
   }
 });

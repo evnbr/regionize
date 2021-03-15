@@ -28,14 +28,24 @@ export type SplitRuleApplier = (
   cloneWithRules: (el: HTMLElement) => HTMLElement,
 ) => void;
 
+export const enum TraverseEvent {
+  canSplitInside = 'canSplitInside',
+  canSplitBetween = 'canSplitBetween',
+  shouldTraverse = 'shouldTraverse',
+  onSplit = 'onSplit',
+  onAddStart = 'onAddStart',
+  onAddFinish = 'onAddFinish',
+  onAddCancel = 'onAddCancel'
+}
+
 export interface TraverseHandler {
-  canSplitInside: (el: HTMLElement) => boolean;
-  canSplitBetween: (el: HTMLElement, next: HTMLElement) => boolean;
-  shouldTraverse: (el: HTMLElement) => boolean;
-  onAddStart: (el: HTMLElement) => Promise<any>;
-  onAddFinish: (el: HTMLElement) => Promise<any>;
-  onAddCancel: (el: HTMLElement) => Promise<any>;
-  onSplit: SplitRuleApplier;
+  [TraverseEvent.canSplitInside]: (el: HTMLElement) => boolean;
+  [TraverseEvent.canSplitBetween]: (el: HTMLElement, next: HTMLElement) => boolean;
+  [TraverseEvent.shouldTraverse]: (el: HTMLElement) => boolean;
+  [TraverseEvent.onAddStart]: (el: HTMLElement) => Promise<any>;
+  [TraverseEvent.onAddFinish]: (el: HTMLElement) => Promise<any>;
+  [TraverseEvent.onAddCancel]: (el: HTMLElement) => Promise<any>;
+  [TraverseEvent.onSplit]: SplitRuleApplier;
 }
 
 export interface Plugin extends Readonly<Partial<TraverseHandler>> {
