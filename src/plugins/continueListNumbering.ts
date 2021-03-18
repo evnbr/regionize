@@ -3,7 +3,7 @@ import type { Plugin } from '../types';
 
 export const continueListNumbering = (): Plugin => ({
   selector: 'ol',
-  onSplit: (original: HTMLElement, remainder: HTMLElement) => {
+  onSplitFinish: (original: HTMLElement, remainder: HTMLElement) => {
     // restart numbering
     let prevStart = 1; // null is implicitly 1, not 0
   

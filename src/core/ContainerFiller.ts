@@ -1,23 +1,25 @@
-import {
-  AppendStatus,
-  AppendResult,
-  OverflowDetector,
-  TraverseHandler,
-} from '../types';
-
-import { isTextNode, isContentElement, isElement } from '../guards';
-import { addTextNodeWithoutSplit, addTextUntilOverflow } from './addTextNode';
+import { TraverseHandler } from '../types';
+import { AppendStatus, AppendResult } from './AppendResult';
+import { OverflowContainer } from './OverflowContainer';
+import { isTextNode, isContentElement, isElement } from '../util/domUtils';
+import { appendTextNodeWithoutSplit, appendTextUntilWhileFitting } from './appendTextNode';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
-export class Traverser {
+export class ContainerFiller {
   handler: TraverseHandler;
+  private currentContainer!: OverflowContainer;
 
   constructor(handler: TraverseHandler) {
     this.handler = handler;
+  }
+
+  async addContent(content: HTMLElement, container: OverflowContainer): Promise<AppendResult> {
+    this.currentContainer = container;
+    return this.appendElement(content, undefined);
   }
 
   private applySplitRules(original: HTMLElement, remainder: HTMLElement) {
@@ -29,35 +31,30 @@ export class Traverser {
     };
 
     setIsSplit(remainder);
-    this.handler.onSplit(
-      original,
-      remainder,
-      cloneWithRules,
-    );
+    this.handler.onSplitFinish(original,remainder, cloneWithRules);
   }
 
-  private canSplitInside(element: HTMLElement, region: OverflowDetector): boolean {
+  private canSplitInside(element: HTMLElement): boolean {
     if (!this.handler.canSplitInside(element)) {
       return false;
     }
-    if (element === region.element) {
+    if (element === this.currentContainer.element) {
       return true;
     }
     if (element.parentElement) {
-      return this.canSplitInside(element.parentElement, region);
+      return this.canSplitInside(element.parentElement);
     }
     return true;
   }
 
   private shouldTraverseChildren(element: HTMLElement): boolean {
-    if (this.handler.shouldTraverse(element)) {
-      // The caller has indicated the region size could change as a result of traversing the elements,
+    if (this.handler.canSkipTraverse(element)) {
+      // The caller has asserted the region size cannot change as a result of traversing the elements,
       // for example if an image needs to be loaded and measured, or if a footnote would be added
       // that eats into the available space for content,
-      // If so, checking for overflow is not accurate.
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
 
   // TODO: Can we conect to progress estimator?
@@ -68,46 +65,49 @@ export class Traverser {
   //   this.emitProgress('inProgress');
   // }
 
-  private async addText(textNode: Text, parent: HTMLElement, region: OverflowDetector) {
-    const shouldSplitText = this.canSplitInside(parent, region) && !isInsideIgnoreOverflow(parent);
+  private async appendText(textNode: Text, parent: HTMLElement) {
+    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
+    const doesFit = () => {
+      return !this.currentContainer.hasOverflowed();
+      // if too small, X
+      // if too big, y
+    }
 
     if (shouldSplitText) {
-      return await addTextUntilOverflow(textNode, parent, region.hasOverflowed);
+      return await appendTextUntilWhileFitting(textNode, parent, doesFit);
     } else {
-      return await addTextNodeWithoutSplit(textNode, parent, region.hasOverflowed);
+      return await appendTextNodeWithoutSplit(textNode, parent, doesFit);
     }
   }
 
-  private async addChild(
-    child: Text | HTMLElement,
-    parent: HTMLElement,
-    region: OverflowDetector,
-  ): Promise<AppendResult> {
+  private async appendNode(child: Text | HTMLElement, parent: HTMLElement): Promise<AppendResult> {
     if (isTextNode(child)) {
-      return await this.addText(child, parent, region);
+      return await this.appendText(child, parent);
     }
-    return this.addElement(child, parent, region);
+    return this.appendElement(child, parent);
   }
 
-  private splitSiblings(proposed: SiblingSplitPoint): SiblingSplitPoint {
+  private async findValidSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
     const siblings = findValidSplit(proposed, this.handler.canSplitBetween.bind(this.handler));
 
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
         // TODO: safely remove recursively
         // TODO: potentially called twice because child may already hace been removed.
+        await this.handler.onAddCancel(sib);
         sib.remove();
-        this.handler.onAddCancel(sib);
       }
     }
 
     return siblings;
   }
 
-  private async traverseChildren(
-    element: HTMLElement,
-    region: OverflowDetector,
-  ): Promise<AppendResult> {
+  private isElementToSmallToConsiderFitting(element: HTMLElement) {
+    // TODO: Or, ancestor too short.
+    return element.childNodes.length == 0;
+  }
+
+  private async traverseChildren(element: HTMLElement): Promise<AppendResult> {
 
     // ignore scripts, comments, etc when iterating
     const remainingChildren = [...element.childNodes]
@@ -117,28 +117,29 @@ export class Traverser {
     
     element.innerHTML = ''; // Clear children
 
-    if (region.hasOverflowed() && !isInsideIgnoreOverflow(element)) {
-      // Doesn't fit when empty
-      return this.cancelAndCreateNoneResult(element, remainingChildren);
+    if (this.currentContainer.hasOverflowed() && !isInsideIgnoreOverflow(element)) { // TODO: Or, ancestor too short
+      // Doesn't fit when empty 
+      const result = await this.cancelAndCreateNoneResult(element, remainingChildren); 
+      return result;
     }
 
     while (remainingChildren.length > 0) {
       // pop the first child off
       const child = remainingChildren.shift()!;
 
-      let childResult = await this.addChild(child, element, region);
+      let childResult = await this.appendNode(child, element);
 
       switch (childResult.status) {
         case AppendStatus.ADDED_NONE:
-          const siblings = this.splitSiblings({
+          const siblings = await this.findValidSplit({
             added: [...element.childNodes],
             remainders: [child]
           });
           const overflowingChildren = [...siblings.remainders, ...remainingChildren];
 
-          if (element.childNodes.length == 0) {
-            // Element seemed to fit when empty, but failed to add any portion of its
-            // first child. Reject entirely and restart in the next region.
+          if (this.isElementToSmallToConsiderFitting(element)) {
+            // Element seemed to fit when empty, but failed to add any portion of its first child
+            // while fulfilling plugin rules. Reject entirely and restart in the next region.
             return this.cancelAndCreateNoneResult(element, overflowingChildren);
           }
           return this.createRemainderResult(element, overflowingChildren);
@@ -158,10 +159,9 @@ export class Traverser {
     };
   }
 
-  async addElement(
+  private async appendElement(
     element: HTMLElement,
-    parentEl: HTMLElement | undefined,
-    region: OverflowDetector,
+    parentEl: HTMLElement | undefined
   ): Promise<AppendResult> {
 
     if (!isSplit(element)) {
@@ -170,25 +170,25 @@ export class Traverser {
       await this.handler.onAddStart(element);
     }
 
-    const parent = parentEl ?? region;
+    const parent = parentEl ?? this.currentContainer;
     parent.append(element);
 
-    const hasOverflowed = region.hasOverflowed();
+    const hasOverflowed = this.currentContainer.hasOverflowed();
 
-    if (hasOverflowed && !this.canSplitInside(element, region)) {
+    if (hasOverflowed && !this.canSplitInside(element)) { // TODO: OR is ancestor fitting amount too small.
 
       // If we can't clear and traverse children, we already know it doesn't fit.
       return this.cancelAndCreateNoneResult(element);
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
-      const childrenResult = await this.traverseChildren(element, region);
+      const childrenResult = await this.traverseChildren(element);
       if (childrenResult.status !== AppendStatus.ADDED_ALL) {
         return childrenResult;
       }
     }
 
-    // Success, we finished adding this entire element without overflowing the region.
+    // Success, we finished adding this entire element without overflowing the container.
     await this.handler.onAddFinish(element);
 
     return {
@@ -208,14 +208,14 @@ export class Traverser {
     };
   }
 
-  private cancelAndCreateNoneResult(element: HTMLElement, contentsToRestore?: Node[]): AppendResult {
+  private async cancelAndCreateNoneResult(element: HTMLElement, contentsToRestore?: Node[]): Promise<AppendResult> {
     element.remove();
 
     if (contentsToRestore) {
       element.append(...contentsToRestore);
     }
 
-    this.handler.onAddCancel(element);
+    await this.handler.onAddCancel(element);
 
     return {
       status: AppendStatus.ADDED_NONE,

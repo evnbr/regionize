@@ -21,3 +21,8 @@ export const isScript = (node: Element): boolean => {
 export const isContentElement = (node: Node): node is HTMLElement => {
   return isElement(node) && !isScript(node);
 };
+
+export const missingInputError = (name: string) => {
+  return new Error(`Regionize: Required option '${name}' not specified`);
+}
+

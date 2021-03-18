@@ -48,13 +48,17 @@ const runBrowserTest = async (b) => {
       fs.writeFileSync(fileName, html);
       console.log(`💾 Saved current snapshot on ${browserName} as '${fileName}'`);
     } else {
-      const golden = fs.readFileSync(fileName).toString();
+      try {
+        const golden = fs.readFileSync(fileName).toString();
 
-      if (html === golden) {
-        console.log(`✅ Snapshot matched on ${browserName} '${id}'`);
-      } else {
-        console.log(`❌ Snapshot diff on ${browserName} '${id}'`);
-        renderDiff(html, golden);
+        if (html === golden) {
+          console.log(`✅ Snapshot matched on ${browserName} '${id}'`);
+        } else {
+          console.log(`❌ Snapshot diff on ${browserName} '${id}'`);
+          renderDiff(golden, html);
+        }
+      } catch (error) {
+        console.log(`🤷 No golden snapshot found for '${id}'`);
       }
     }
   }

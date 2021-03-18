@@ -8,17 +8,6 @@ const reducedIndent = (orginal) => {
     .join('\n');
 };
 
-const prettyPrintConfig = (obj) => {
-  const lines = Object
-    .keys(obj)
-    .map((k) => {
-      const val = obj[k];
-      const prettyVal = reducedIndent(val);
-      return `  ${k}: ${prettyVal}`;
-    });
-  return lines.length ? `{\n${lines.join(',\n')}\n}` : '{}';
-};
-
 const prettyPrintPlugins = (getter) => {
   const lines = getter
     .toString()
@@ -26,12 +15,8 @@ const prettyPrintPlugins = (getter) => {
     .slice(1, -1)
     .join('\n');
   const reduced = reducedIndent(lines);
-  return `[\n${reduced}\n  ]`;
+  return `[\n${reduced}\n  ],`;
 };
-
-// const prettyPrintPlugins = (arr) => {
-//   return arr && arr.length ? `[\n${arr.map(prettyPrintConfig).join(',\n')}\n]` : '[]';
-// }
 
 const isNode = input => !!input && input.nodeType;
 const isString = input => !!input && typeof input === 'string';
@@ -66,8 +51,12 @@ const setup = async ({ id, name, desc, contentId, getPlugins }) => {
     rowFragment
   );
 
+  const plugins = getPlugins();
   const configHolder = item.querySelector('.config-slot');
-  configHolder.append(prettyPrintPlugins(getPlugins));
+  configHolder.append(plugins.length > 0
+    ? prettyPrintPlugins(getPlugins)
+    : '[],'
+  );
 
   const contentFrag = document.querySelector(`#${contentId}`).content;
   const content = item.querySelector('.content');
@@ -83,9 +72,15 @@ const setup = async ({ id, name, desc, contentId, getPlugins }) => {
   const result = await addUntilOverflow({
     content: content.cloneNode(true),
     container,
-    plugins: getPlugins(),
+    plugins,
   });
-  remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
+  // remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
+  await addUntilOverflow({
+    content: result.remainder,
+    container: remainderContainer,
+    plugins,
+  });
+  console.log(result);
 
   // console.log(`Finished ${id}`);
 };

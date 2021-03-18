@@ -16,11 +16,11 @@
           </div>
           <div>
             <h4 class="fg-red">Remainder</h4>
-            <div class="remainder box">
-            <div class="content box" data-region-split="true"><p data-region-split="true"> tempor 
+            <div class="remainder sized-container box" data-region="true">
+            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><p data-region-split="true"> tempor 
         sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
         mi vitae est. Mauris placerat eleifend leo.
       </p>
-    </div></div>
+    </div></div></div>
           </div>
         

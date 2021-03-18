@@ -1,22 +1,16 @@
-import { ensureImageLoaded } from './ensureImageLoaded';
+import { ensureImageLoaded } from '../plugins/ensureImageLoaded';
 import { Plugin, TraverseEvent, TraverseHandler } from '../types';
+import { runInSequence } from '../util/asyncUtils';
   
 const DEFAULT_PLUGINS = [
   ensureImageLoaded(),
 ];
 
-async function runInSequence<T>(
-  asyncFns: Array<(arg: T) => Promise<any>>,
-  arg: T,
-) {
-  for (let f of asyncFns) await f(arg);
-}
-
 // A class that exposes a consistent interface
 // over a list of plugins, combining the results as
 // appropriate
 export class PluginManager implements TraverseHandler {
-  private plugins: Plugin[];
+  private readonly plugins: Plugin[];
 
   constructor(plugins: Plugin[]) {
     this.plugins = [...DEFAULT_PLUGINS, ...plugins];
@@ -45,20 +39,21 @@ export class PluginManager implements TraverseHandler {
       .every(can => can(el, next));
   }
 
-  // Defaults false, unless any plugin returns true
-  shouldTraverse(el: HTMLElement): boolean {
-    return this
-      .handlersFor(TraverseEvent.shouldTraverse, el)
-      .some(should => should(el));
+  // Defaults false, unless every plugin returns true
+  canSkipTraverse(el: HTMLElement): boolean {
+    const handlers = this.handlersFor(TraverseEvent.canSkipTraverse, el);
+    return handlers.length > 0
+      ? handlers.every(canSkip => canSkip(el)) 
+      : false;
   }
 
-  // Runs all plugins synchronously
-  onSplit(
+  // Runs each sequentially
+  onSplitFinish(
     el: HTMLElement,
     remainder: HTMLElement,
     cloneWithRules: (el: HTMLElement) => HTMLElement
   ) {
-    const fns = this.handlersFor(TraverseEvent.onSplit, el);
+    const fns = this.handlersFor(TraverseEvent.onSplitFinish, el);
     for (let fn of fns) fn(el, remainder, cloneWithRules);
   }
 

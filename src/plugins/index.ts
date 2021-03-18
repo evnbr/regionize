@@ -5,3 +5,4 @@ export { ensureImageLoaded } from './ensureImageLoaded';
 export { keepTogether } from './keepTogether';
 export { preserveTableColumns } from './preserveTableColumns';
 export { preventSplit } from './preventSplit';
+export { makePlugin } from './makePlugin';

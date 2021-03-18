@@ -18,13 +18,13 @@
           </div>
           <div>
             <h4 class="fg-red">Remainder</h4>
-            <div class="remainder box">
-            <div class="content box" data-region-split="true"><ol data-region-split="true"><li data-region-split="true"> sit amet, 
+            <div class="remainder sized-container box" data-region="true">
+            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><ol data-region-split="true"><li data-region-split="true"> sit amet, 
           ante. Donec eu libero sit amet quam egestas semper
         </li>
         <li>Sixthly, aenean ultricies mi vitae est.</li>
         <li>Seventhly, duis sagittis ipsum. Praesent libero. </li>
       </ol>
-    </div></div>
+    </div></div></div>
           </div>
         

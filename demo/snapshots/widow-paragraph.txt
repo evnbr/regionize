@@ -14,14 +14,14 @@
           </div>
           <div>
             <h4 class="fg-red">Remainder</h4>
-            <div class="remainder box">
-            <div class="content box" data-region-split="true"><p data-region-split="true" style="text-indent: 0px;"> leo.
+            <div class="remainder sized-container box" data-region="true">
+            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><p data-region-split="true" style="text-indent: 0px;"> leo.
       </p>
       <p>
         Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
         turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
         sit amet, ante. Donec eu libero sit amet quam egestas semper. 
       </p>
-    </div></div>
+    </div></div></div>
           </div>
         

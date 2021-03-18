@@ -2,7 +2,7 @@ import type { Plugin } from '../types';
 
 export const clearIndents = (selector = 'p'): Plugin => ({
   selector,
-  onSplit: (_, remainder) => {
+  onSplitFinish: (_, remainder) => {
     remainder.style.textIndent = '0';
   },
 });

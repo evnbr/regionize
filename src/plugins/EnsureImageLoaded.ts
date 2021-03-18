@@ -32,11 +32,12 @@ const pollForImageSize = async (image: HTMLImageElement): Promise<number> => {
 
 
 export const ensureImageLoaded = (): Plugin => ({
-  shouldTraverse: (el) => {
+  selector: 'img',
+  canSkipTraverse: (el) => {
     // Any parent containing an unloaded image could change
     // size, and must be traversed to trigger onAddStart.
     const img = el.querySelector('img');
-    return !!img && isUnloadedImage(img);
+    return !img || !isUnloadedImage(img);
   },
   onAddStart: async (el) => {
     if (isUnloadedImage(el)) {

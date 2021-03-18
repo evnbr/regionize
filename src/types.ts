@@ -1,27 +1,3 @@
-
-export interface OverflowDetector {
-  readonly element: HTMLElement;
-  append(...nodes: (string | Node)[]): void;
-  hasOverflowed(): boolean;
-}
-
-export const enum AppendStatus {
-  ADDED_ALL = 'all',
-  ADDED_PARTIAL = 'partial',
-  ADDED_NONE = 'none',
-}
-
-type WholeNodeAppendResult = {
-  status: AppendStatus.ADDED_ALL | AppendStatus.ADDED_NONE;
-}
-
-type PartialNodeAppendResult = {
-  status: AppendStatus.ADDED_PARTIAL;
-  remainder: Node;
-}
-
-export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
-
 export type SplitRuleApplier = (
   original: HTMLElement,
   clone: HTMLElement,
@@ -31,21 +7,21 @@ export type SplitRuleApplier = (
 export const enum TraverseEvent {
   canSplitInside = 'canSplitInside',
   canSplitBetween = 'canSplitBetween',
-  shouldTraverse = 'shouldTraverse',
-  onSplit = 'onSplit',
+  canSkipTraverse = 'canSkipTraverse',
   onAddStart = 'onAddStart',
   onAddFinish = 'onAddFinish',
-  onAddCancel = 'onAddCancel'
+  onAddCancel = 'onAddCancel',
+  onSplitFinish = 'onSplitFinish',
 }
 
 export interface TraverseHandler {
   [TraverseEvent.canSplitInside]: (el: HTMLElement) => boolean;
   [TraverseEvent.canSplitBetween]: (el: HTMLElement, next: HTMLElement) => boolean;
-  [TraverseEvent.shouldTraverse]: (el: HTMLElement) => boolean;
-  [TraverseEvent.onAddStart]: (el: HTMLElement) => Promise<any>;
-  [TraverseEvent.onAddFinish]: (el: HTMLElement) => Promise<any>;
-  [TraverseEvent.onAddCancel]: (el: HTMLElement) => Promise<any>;
-  [TraverseEvent.onSplit]: SplitRuleApplier;
+  [TraverseEvent.canSkipTraverse]: (el: HTMLElement) => boolean;
+  [TraverseEvent.onAddStart]: (el: HTMLElement) => Promise<void>;
+  [TraverseEvent.onAddFinish]: (el: HTMLElement) => Promise<void>;
+  [TraverseEvent.onAddCancel]: (el: HTMLElement) => Promise<void>;
+  [TraverseEvent.onSplitFinish]: SplitRuleApplier;
 }
 
 export interface Plugin extends Readonly<Partial<TraverseHandler>> {

@@ -3,7 +3,7 @@ import type { Plugin } from '../types';
 
 export const preserveTableColumns = (selector = 'tr'): Plugin => ({
   selector,
-  onSplit: (
+  onSplitFinish: (
     original: HTMLElement,
     remainder: HTMLElement,
     deepClone: (el: HTMLElement) => HTMLElement,

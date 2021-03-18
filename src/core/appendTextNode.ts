@@ -1,17 +1,17 @@
-import { yieldIfNeeded } from './schedule';
+import { yieldIfNeeded } from '../util/asyncUtils';
 import { isInsideIgnoreOverflow } from '../attributeHelper';
-import { AppendStatus, AppendResult } from '../types';
-import { indexOfNextWordEnd, indexOfPreviousWordEnd, isAllWhitespace } from './stringUtils';
+import { AppendStatus, AppendResult } from './AppendResult';
+import { indexOfNextWordEnd, indexOfPreviousWordEnd, isAllWhitespace } from '../util/stringUtils';
 
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
-export async function addTextNodeWithoutSplit(
+export async function appendTextNodeWithoutSplit(
   textNode: Text,
   container: HTMLElement,
-  hasOverflowed: () => boolean,
+  doesFit: () => boolean,
 ): Promise<AppendResult> {
   container.appendChild(textNode);
-  const success = !hasOverflowed();
+  const success = doesFit();
   if (!success) container.removeChild(textNode);
   await yieldIfNeeded();
   return {
@@ -21,15 +21,15 @@ export async function addTextNodeWithoutSplit(
 
 // Incrementally add words to the container until it just barely doesn't
 // overflow. Returns a remainder textNode for remaining text.
-export async function addTextUntilOverflow(
+export async function appendTextUntilWhileFitting(
   textNode: Text,
   container: HTMLElement,
-  hasOverflowed: () => boolean,
+  doesFit: () => boolean,
 ): Promise<AppendResult> {
   const originalText = textNode.nodeValue ?? '';
   container.appendChild(textNode);
 
-  if (!hasOverflowed() || isInsideIgnoreOverflow(container)) {
+  if (doesFit() || isInsideIgnoreOverflow(container)) {
     // The whole thing fits
     return { status: AppendStatus.ADDED_ALL };
   }
@@ -38,7 +38,7 @@ export async function addTextUntilOverflow(
   let proposedEnd = 0;
   textNode.nodeValue = originalText.substr(0, proposedEnd);
 
-  while (!hasOverflowed() && proposedEnd < originalText.length) {
+  while (doesFit() && proposedEnd < originalText.length) {
     // Reveal the next word
     proposedEnd = indexOfNextWordEnd(originalText, proposedEnd);
 

@@ -1,31 +1,28 @@
-import {
-  AppendStatus,
-  OverflowDetector,
-  TraverseHandler,
-} from '../types';
-
-import { isContentElement } from '../guards';
-import { Traverser } from './Traverser';
+import type { OverflowContainer } from './OverflowContainer';
+import { TraverseHandler } from '../types';
+import { AppendStatus } from './AppendResult';
+import { isContentElement } from '../util/domUtils';
+import { ContainerFiller } from './ContainerFiller';
 import { ProgressEstimator, ProgressEvent } from './ProgressEstimator';
   
 const noop = () => {};
 
-// Wraps a traverser with methods to continue adding content until
+// Wraps a single ContainerFiller with methods to continue adding content until
 // none remains, continuously call getNextContainer
 // when it runs out of room. Also emits progress events
 // if you pass in progressCallback
 
-export class MultiContainerTraverser {
-  private traverser: Traverser
+export class MultiContainerFiller {
+  private filler: ContainerFiller
   private progressTracker: ProgressEstimator;
-  private getNextContainer: () => OverflowDetector; 
+  private getNextContainer: () => OverflowContainer; 
 
   constructor(
     handler: TraverseHandler,
-    getNextContainer: () => OverflowDetector,
+    getNextContainer: () => OverflowContainer,
     progressCallback?: (e: ProgressEvent) => void,
   ) {
-    this.traverser = new Traverser(handler);
+    this.filler = new ContainerFiller(handler);
     this.getNextContainer = getNextContainer.bind(this);
     this.progressTracker = new ProgressEstimator(progressCallback ?? noop);
   }
@@ -33,24 +30,24 @@ export class MultiContainerTraverser {
   // TODO: how do we get the progress events
 
   // Wraps with an estimator
-  async addAcrossContainers(content: HTMLElement): Promise<void> {
+  async addContent(content: HTMLElement): Promise<void> {
     this.progressTracker.begin(content.querySelectorAll('*').length);
 
     const firstRegion = this.getNextContainer();
-    await this.addElementAcrossRegions(content, firstRegion);
+    await this.addElementAcrossContainers(content, firstRegion);
 
     this.progressTracker.end();
   }
 
   // Keeps calling itself until there's no more content
-  private async addElementAcrossRegions(
+  private async addElementAcrossContainers(
     content: HTMLElement,
-    initialRegion: OverflowDetector,
+    initialContainer: OverflowContainer,
   ): Promise<void> {
-    const result = await this.traverser.addElement(content, undefined, initialRegion);
+    const result = await this.filler.addContent(content, initialContainer);
     if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
       const nextRegion = this.getNextContainer();
-      await this.addElementAcrossRegions(result.remainder, nextRegion);
+      await this.addElementAcrossContainers(result.remainder, nextRegion);
     }
   }
 }

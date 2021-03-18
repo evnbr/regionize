@@ -1,7 +1,7 @@
 
           <div>
             <h4 class="fg-blue">Container</h4>
-            <div class="sized-container box" data-region="true">
+            <div class="sized-container box" data-region="true" style="border: 4px solid green;">
             <div class="region-measured-content" style="position: relative;"><div class="content box">
               
       <h2>Heading 2</h2>
@@ -15,8 +15,8 @@
           </div>
           <div>
             <h4 class="fg-red">Remainder</h4>
-            <div class="remainder sized-container box" data-region="true">
-            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><h3>Heading 3</h3>
+            <div class="remainder sized-container box" data-region="true" style="border: 4px solid green;">
+            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><h3 style="color: green;">Heading 3</h3>
       <p>
         Second paragraph pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
         turpis egestas.

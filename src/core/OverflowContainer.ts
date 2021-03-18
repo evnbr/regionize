@@ -1,26 +1,29 @@
-import { OverflowDetector } from '../types';
 import { setIsRegion } from '../attributeHelper';
 
-export class Region implements OverflowDetector {
+const createWrapper = () => {
+  const wrap = document.createElement('div');
+  wrap.classList.add('region-measured-content');
+  wrap.style.position = 'relative';
+  return wrap;
+}
+
+export interface OverflowContainer {
+  readonly element: HTMLElement;
+  append(...nodes: (string | Node)[]): void;
+  hasOverflowed(): boolean;
+}
+
+export class OverflowContainerElement implements OverflowContainer {
   element: HTMLElement;
-  initialgetContainerHeight: Number;
   private measurementWrapper: HTMLElement;
 
   constructor(el: HTMLElement) {
     this.element = el;
-    this.measurementWrapper = Region.createWrapper();
+    this.measurementWrapper = createWrapper();
     this.element.append(this.measurementWrapper);
     setIsRegion(el);
 
     this.hasOverflowed = this.hasOverflowed.bind(this);
-    this.initialgetContainerHeight = this.getContainerHeight();
-  }
-
-  private static createWrapper() {
-    const wrap = document.createElement('div');
-    wrap.classList.add('region-measured-content');
-    wrap.style.position = 'relative';
-    return wrap;
   }
 
   append(...nodes: (string | Node)[]) {
@@ -48,7 +51,7 @@ export class Region implements OverflowDetector {
     return this.measurementWrapper.offsetHeight;
   }
 
-  overflowAmount(): number {
+  private overflowAmount(): number {
     const containerHeight = this.getContainerHeight();
     const contentHeight = this.getContentHeight();
     if (containerHeight === 0) {
@@ -58,6 +61,6 @@ export class Region implements OverflowDetector {
   }
 
   hasOverflowed(): boolean {
-    return this.overflowAmount() > -5;
+    return this.overflowAmount() > -5; // todo why 5
   }
 }

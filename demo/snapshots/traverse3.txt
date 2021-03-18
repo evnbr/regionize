@@ -8,7 +8,7 @@
       <div class="bordered">
         Top boxed item. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
         Integer nec odio. Praesent libero.
-        <div class="bordered inner" style="background-color: yellow;">
+        <div class="bordered inner">
           Inner content, maybe a footnote.
         </div>    
       </div>
@@ -20,10 +20,10 @@
           </div>
           <div>
             <h4 class="fg-red">Remainder</h4>
-            <div class="remainder box">
-            <div class="content box" data-region-split="true"><div class="bordered" data-region-split="true"> dolor sit amet, consectetur adipiscing elit.
+            <div class="remainder sized-container box" data-region="true">
+            <div class="region-measured-content" style="position: relative;"><div class="content box" data-region-split="true"><div class="bordered" data-region-split="true"> dolor sit amet, consectetur adipiscing elit.
         Integer nec odio. Praesent libero.
       </div>
-    </div></div>
+    </div></div></div>
           </div>
         

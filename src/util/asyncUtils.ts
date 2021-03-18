@@ -15,3 +15,11 @@ export const shouldYield = (): boolean => {
 export const yieldIfNeeded = async (): Promise<void> => {
   if (shouldYield()) lastYieldTime = await nextFrame();
 };
+
+
+export const runInSequence = async <T>(
+  asyncFns: Array<(arg: T) => Promise<any>>,
+  arg: T,
+) => {
+  for (let f of asyncFns) await f(arg);
+}
