@@ -4,7 +4,7 @@ export type SplitRuleApplier = (
   cloneWithRules: (el: HTMLElement) => HTMLElement,
 ) => void;
 
-export const enum TraverseEvent {
+export enum TraverseEvent {
   canSplitInside = 'canSplitInside',
   canSplitBetween = 'canSplitBetween',
   canSkipTraverse = 'canSkipTraverse',
@@ -27,3 +27,5 @@ export interface TraverseHandler {
 export interface Plugin extends Readonly<Partial<TraverseHandler>> {
   readonly selector?: string;
 }
+
+export const allPluginKeys = ['selector', ...Object.values(TraverseEvent)];

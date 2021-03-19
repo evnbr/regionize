@@ -57,7 +57,7 @@ const runBrowserTest = async (b) => {
           console.log(`❌ Snapshot diff on ${browserName} '${id}'`);
           renderDiff(golden, html);
         }
-      } catch (error) {
+      } catch (err) {
         console.log(`🤷 No golden snapshot found for '${id}'`);
       }
     }
