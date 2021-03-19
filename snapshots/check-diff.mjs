@@ -1,19 +1,18 @@
-const path = require('path');
-const fs = require('fs');
-const posthtml = require('posthtml');
-const beautify = require('posthtml-beautify');
-const { chromium, firefox, webkit } = require('playwright');
-const Diff = require('diff');
-require('colors');
+import path from 'path';
+import fs from 'fs';
+import posthtml from 'posthtml';
+import beautify from 'posthtml-beautify';
+import { chromium, firefox, webkit } from 'playwright';
+import { Diff } from 'diff';
 
-const testCases = require('./test-cases');
+import testCases from './test-cases.js';
 
 // Run this test with `npm run test:e2e`
 
 const args = process.argv.slice(2);
 const SAVE_SNAPSHOTS = !!args.length && args[0] === 'save_all';
 
-const TEST_URL = `file:${path.join(__dirname, 'index.html')}`;
+const TEST_URL = (new URL('./index.html', import.meta.url)).toString();
 
 const renderDiff = (a, b) => {
   const diff = Diff.diffTrimmedLines(a, b);

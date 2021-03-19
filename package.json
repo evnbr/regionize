@@ -52,8 +52,8 @@
     "test": "jest",
     "clean": "rimraf build",
     "test:ci": "jest --coverage && codecov",
-    "snapshots": "node ./snapshots/check-diff.js",
-    "snapshots:regen": "rimraf ./snapshots/golden/* && node ./snapshots/check-diff.js save_all"
+    "snapshots": "node ./snapshots/check-diff.mjs",
+    "snapshots:regen": "rimraf ./snapshots/golden/* && node ./snapshots/check-diff.mjs save_all"
   },
   "jest": {
     "collectCoverage": true,

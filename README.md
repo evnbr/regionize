@@ -14,7 +14,7 @@ series of separate elements. It makes no attempt to handle the styling of
 elements that break across regions.
 
 Note that Regionize is inspired by the proposed [CSS Regions](http://alistapart.com/blog/post/css-regions-considered-harmful) spec, but does **not** attempt to polyfill that API.
-Instead, it provides utilities to determine how much of an DOM tree and fit inside a statically-sized container, and how much overflows, in plain javascript.
+Instead, it provides utilities to determine how much of an DOM tree can fit inside a statically-sized container, and how much overflows, in plain javascript.
 
 Regionize powers [bindery.js](https://evanbrooks.info/bindery/).
 
