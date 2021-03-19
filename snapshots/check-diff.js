@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const posthtml = require('posthtml');
-const attrsSorter = require('posthtml-attrs-sorter');
+const beautify = require('posthtml-beautify');
 const { chromium, firefox, webkit } = require('playwright');
 const Diff = require('diff');
 require('colors');
@@ -11,7 +11,7 @@ const testCases = require('./test-cases');
 // Run this test with `npm run test:e2e`
 
 const args = process.argv.slice(2);
-const SAVE_SNAPSHOTS = !!args.length && args[0] === 'save_snapshots';
+const SAVE_SNAPSHOTS = !!args.length && args[0] === 'save_all';
 
 const TEST_URL = `file:${path.join(__dirname, 'index.html')}`;
 
@@ -27,6 +27,12 @@ const renderDiff = (a, b) => {
   process.stderr.write('\n');
 };
 
+const normalizer = posthtml().use(beautify({}));
+async function normalizeHtml(txt) {
+  const processed = await normalizer.process(txt);
+  return processed.html;
+}
+
 const runBrowserTest = async (b) => {
   const browserName = b.name();
 
@@ -38,15 +44,15 @@ const runBrowserTest = async (b) => {
   await page.waitForFunction('window.REGIONIZE_DEMOS_ALL_DONE == true');
 
   for (const { id } of testCases) {
-    const fileName = `./demo/snapshots/${id}.txt`;
+    const fileName = `./snapshots/golden/${id}.txt`;
     const htmlRaw = await page.innerHTML(`#${id} .output`);
 
     // firefox innerHTML return attributes in a different order, normalize first
-    const html = (await posthtml().use(attrsSorter({})).process(htmlRaw)).html;
+    const html = await normalizeHtml(htmlRaw);
 
     if (SAVE_SNAPSHOTS) {
       fs.writeFileSync(fileName, html);
-      console.log(`💾 Saved current snapshot on ${browserName} as '${fileName}'`);
+      console.log(`💾 Saved snapshot on ${browserName} as '${fileName}'`);
     } else {
       try {
         const golden = fs.readFileSync(fileName).toString();
@@ -58,7 +64,8 @@ const runBrowserTest = async (b) => {
           renderDiff(golden, html);
         }
       } catch (err) {
-        console.log(`🤷 No golden snapshot found for '${id}'`);
+        console.log(`🤷 Error running '${id}' on ${browserName}`);
+        console.log(err);
       }
     }
   }

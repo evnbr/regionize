@@ -35,6 +35,7 @@
     "playwright": "^1.7.1",
     "posthtml": "^0.15.1",
     "posthtml-attrs-sorter": "^1.1.0",
+    "posthtml-beautify": "^0.7.0",
     "prettier": "^1.19.1",
     "rollup": "^2.17.0",
     "rollup-plugin-babel": "^3.0.7",
@@ -51,8 +52,8 @@
     "test": "jest",
     "clean": "rimraf build",
     "test:ci": "jest --coverage && codecov",
-    "test:e2e": "node ./demo/run-test.js",
-    "test:regen": "node ./demo/run-test.js save_snapshots"
+    "snapshots": "node ./snapshots/check-diff.js",
+    "snapshots:regen": "rimraf ./snapshots/golden/* && node ./snapshots/check-diff.js save_all"
   },
   "jest": {
     "collectCoverage": true,
