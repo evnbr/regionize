@@ -1,9 +1,9 @@
-import path from 'path';
 import fs from 'fs';
 import posthtml from 'posthtml';
 import beautify from 'posthtml-beautify';
 import { chromium, firefox, webkit } from 'playwright';
-import { Diff } from 'diff';
+import { diffLines } from 'diff';
+import colors from 'colors';
 
 import testCases from './test-cases.js';
 
@@ -15,13 +15,13 @@ const SAVE_SNAPSHOTS = !!args.length && args[0] === 'save_all';
 const TEST_URL = (new URL('./index.html', import.meta.url)).toString();
 
 const renderDiff = (a, b) => {
-  const diff = Diff.diffTrimmedLines(a, b);
+  const diff = diffLines(a, b);
 
   diff.forEach((part) => {
     let color = 'grey';
     if (part.added) color = 'green';
     if (part.removed) color = 'red';
-    process.stderr.write(part.value[color]);
+    process.stderr.write(colors[color](part.value));
   });
   process.stderr.write('\n');
 };
