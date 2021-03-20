@@ -39,12 +39,20 @@ export class PluginManager implements TraverseHandler {
       .every(can => can(el, next));
   }
 
-  // Defaults false, unless every plugin returns true
+  // Defaults false if no plugins. If there are plugins, returns true if all plugin returns true
   canSkipTraverse(el: HTMLElement): boolean {
     const handlers = this.handlersFor(TraverseEvent.canSkipTraverse, el);
     return handlers.length > 0
       ? handlers.every(canSkip => canSkip(el)) 
       : false;
+  }
+
+  // Defaults undefined if no plugins. If there are plugins, return the largest height requirement.
+  getMinHeight(el: HTMLElement): number | undefined {
+    const heights = this.handlersFor(TraverseEvent.getMinHeight, el)
+      .map(f => f(el))
+      .filter((h: number | undefined): h is number => h !== undefined);
+    return heights.length > 0 ? Math.max(...heights) : undefined;
   }
 
   // Runs each sequentially

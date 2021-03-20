@@ -6,6 +6,7 @@ const {
   continueListNumbering = () => {},
   preventSplit = () => {},
   keepTogether = () => {},
+  minHeight = () => {},
   makePlugin = () => {},
 } = (typeof self !== 'undefined' ? self.Regionize.Plugins : {});
 
@@ -16,6 +17,9 @@ const nestedContent = 'nested-content';
 const traverseContent = 'traverse-content';
 const orphanHeadingContent = 'orphan-heading-content';
 const orphanParaContent = 'orphan-para-content';
+const orphanParaContent2 = 'orphan-para-content-2';
+const orphanParaContentNest = 'orphan-para-content-nest';
+const orphanParaContentSlice = 'orphan-para-content-slice';
 const widowParaContent = 'widow-para-content';
 
 const testCases = [
@@ -248,12 +252,81 @@ const testCases = [
     ],
   },
   {
+    id: 'orphan-paragraph-2',
+    name: 'Shifting orphaned paragraph line',
+    desc: 'Using minHeight on <p> tags to fix',
+    contentId: orphanParaContent,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'orphan-paragraph-3',
+    name: 'Problem: 2 orphaned paragraph lines',
+    desc: 'If 2 lines are orphaned, using a small minHeight allows them to stay together',
+    contentId: orphanParaContent2,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'orphan-paragraph-4',
+    name: 'Shifting 2 orphaned paragraph lines',
+    desc: 'Using a larger minHeight shifts both to the next container',
+    contentId: orphanParaContent2,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 60),
+    ],
+  },
+  {
+    id: 'orphan-para-nest',
+    name: 'Problem: Orphaned line with inline nesting',
+    desc: 'The split point may occur inside nested inline elements',
+    contentId: orphanParaContentNest,
+    getPlugins: () => [
+      clearIndents('p'),
+    ],
+  },
+  {
+    id: 'orphan-para-nest-2',
+    name: 'Fixing orphaned line with inline nesting',
+    desc: 'Using minHeight on <p> tags to fix',
+    contentId: orphanParaContentNest,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
     id: 'widow-paragraph',
     name: 'Problem: Widowed paragraph line',
-    desc: 'Currently, regionize does not handle widowed lines (the last line of a paragraph overflowing in a new region, where you may prefer to break early to overflow 2 lines).  This may be added in a future release.',
+    desc: 'By defauly, regionize does not handle widowed lines (the last line of a paragraph overflowing in a new region, where you may prefer to break early to overflow 2 lines).  This may be added in a future release.',
     contentId: widowParaContent,
     getPlugins: () => [
       clearIndents('p'),
+    ],
+  },
+  {
+    id: 'widow-paragraph-2',
+    name: 'Fixing widowed paragraph line',
+    desc: 'Using minHeight on <p> tags to fix',
+    contentId: widowParaContent,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'widow-paragraph-3',
+    name: 'Fixing widowed paragraph line',
+    desc: 'Using a larger limit shifts more lines',
+    contentId: widowParaContent,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 60),
     ],
   },
 ];

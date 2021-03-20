@@ -2,16 +2,34 @@ import { TraverseHandler } from '../types';
 import { AppendStatus, AppendResult } from './AppendResult';
 import { OverflowContainer } from './OverflowContainer';
 import { isTextNode, isContentElement, isElement } from '../util/domUtils';
-import { appendTextNodeWithoutSplit, appendTextUntilWhileFitting } from './appendTextNode';
+import { appendTextAsBlock, appendTextByWord } from './appendTextNode';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
+// Used for orphan/widow detection and 
+class HeightManagedElement {
+  private element: HTMLElement;
+  readonly originalHeight: number;
+  readonly minHeight: number;
+
+  constructor(el: HTMLElement, minHeight: number) {
+    this.element = el;
+    this.minHeight = minHeight;
+    this.originalHeight = this.getCurrentHeight();
+  }
+
+  getCurrentHeight() {
+    return this.element.offsetHeight;
+  }
+}
+
 export class ContainerFiller {
   handler: TraverseHandler;
   private currentContainer!: OverflowContainer;
+  private currentMeasuredParent?: HeightManagedElement;
 
   constructor(handler: TraverseHandler) {
     this.handler = handler;
@@ -65,24 +83,53 @@ export class ContainerFiller {
   //   this.emitProgress('inProgress');
   // }
 
-  private async appendText(textNode: Text, parent: HTMLElement) {
-    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
-    const doesFit = () => {
-      return !this.currentContainer.hasOverflowed();
-      // if too small, X
-      // if too big, y
+  private canSplitAtMeasuredHeight(): boolean {
+    if (this.currentMeasuredParent === undefined) {
+      return true;
     }
 
-    if (shouldSplitText) {
-      return await appendTextUntilWhileFitting(textNode, parent, doesFit);
-    } else {
-      return await appendTextNodeWithoutSplit(textNode, parent, doesFit);
+    const heightOfAddedPortion = this.currentMeasuredParent.getCurrentHeight();
+    const estHeightOfRemainderPortion = this.currentMeasuredParent.originalHeight - heightOfAddedPortion;
+
+    const min = this.currentMeasuredParent.minHeight;
+
+    if (min === undefined) {
+      return true;
     }
+
+    if (heightOfAddedPortion < min || estHeightOfRemainderPortion < min) {
+      return false;
+    }
+
+    return true;
   }
 
-  private async appendNode(child: Text | HTMLElement, parent: HTMLElement): Promise<AppendResult> {
+  private async appendText(textNode: Text, parent: HTMLElement) {
+    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
+
+    const doesFit = () => {
+      return !this.currentContainer.hasOverflowed();
+    }
+
+    if (!shouldSplitText) {
+      // Short circuit if we aren't adding by word
+      return await appendTextAsBlock(textNode, parent, doesFit);
+    }
+
+    const canSplit = () => {
+      console.log(textNode.nodeValue);
+      return this.canSplitAtMeasuredHeight();
+    }
+    
+    return await appendTextByWord(textNode, parent, doesFit, canSplit);
+  }
+
+  private async appendNode(
+    child: Text | HTMLElement,
+    parent: HTMLElement,
+  ): Promise<AppendResult> {
     if (isTextNode(child)) {
-      return await this.appendText(child, parent);
+      return this.appendText(child, parent);
     }
     return this.appendElement(child, parent);
   }
@@ -107,15 +154,29 @@ export class ContainerFiller {
     return element.childNodes.length == 0;
   }
 
-  private async traverseChildren(element: HTMLElement): Promise<AppendResult> {
+  private startManagingHeightIfNeeded(element: HTMLElement) {
+    const minHeight = this.handler.getMinHeight(element); // TODO: clearer shouldManageHeight call
+    if (minHeight !== undefined) {
+      if (this.currentMeasuredParent !== undefined) {
+        // TODO: Are there real scenarios to manage the height of multiple nested elements?
+        throw Error(`Can't start managing the height of ${element} while already managing the height of ${this.currentContainer.element}`);
+      }
+      this.currentMeasuredParent = new HeightManagedElement(element, minHeight);
+    }
+  }
 
+  private endManagingHeight() {
+    this.currentMeasuredParent = undefined;
+  }
+
+  private async addChildrenThatFit(element: HTMLElement): Promise<AppendResult> {
     // ignore scripts, comments, etc when iterating
     const remainingChildren = [...element.childNodes]
       .filter((c): c is (HTMLElement | Text) => {
         return isContentElement(c) || isTextNode(c);
       });
     
-    element.innerHTML = ''; // Clear children
+    (element as any).replaceChildren(); // Clear children
 
     if (this.currentContainer.hasOverflowed() && !isInsideIgnoreOverflow(element)) { // TODO: Or, ancestor too short
       // Doesn't fit when empty 
@@ -182,7 +243,10 @@ export class ContainerFiller {
     }
 
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
-      const childrenResult = await this.traverseChildren(element);
+      this.startManagingHeightIfNeeded(element);
+      const childrenResult = await this.addChildrenThatFit(element);
+      this.endManagingHeight();
+
       if (childrenResult.status !== AppendStatus.ADDED_ALL) {
         return childrenResult;
       }
@@ -196,9 +260,9 @@ export class ContainerFiller {
     };
   }
 
-  private createRemainderResult(original: HTMLElement, contents: Node[]): AppendResult {
+  private createRemainderResult(original: HTMLElement, overflowingNodes: Node[]): AppendResult {
     const remainder = cloneWithoutChildren(original);
-    remainder.append(...contents);
+    remainder.append(...overflowingNodes);
 
     this.applySplitRules(original, remainder);
 

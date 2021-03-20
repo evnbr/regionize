@@ -13,9 +13,11 @@ export interface AddUntilOptions {
 }
 
 // Public API for adding content and returning a remainder
-export async function addUntilOverflow(
-  { content, container, plugins }: AddUntilOptions
-): Promise<AppendResult> {
+export async function addUntilOverflow({
+  content,
+  container,
+  plugins
+}: AddUntilOptions): Promise<AppendResult> {
   if (!content) throw missingInputError('content');
   if (!container) throw missingInputError('container');
 

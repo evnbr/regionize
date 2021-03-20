@@ -14,9 +14,12 @@ export interface AddAcrossOptions {
 
 // Public API for adding content and 
 // containers until there is no remainder
-export async function addAcrossContainers (
-  { content, getNextContainer, plugins, onProgress }: AddAcrossOptions
-): Promise<void> {
+export async function addAcrossContainers ({
+  content,
+  getNextContainer,
+  plugins,
+  onProgress
+}: AddAcrossOptions): Promise<void> {
 
   if (!content) throw missingInputError('content');
   if (!getNextContainer) throw missingInputError('getNextContainer');

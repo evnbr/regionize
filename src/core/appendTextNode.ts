@@ -5,7 +5,7 @@ import { indexOfNextWordEnd, indexOfPreviousWordEnd, isAllWhitespace } from '../
 
 // Try adding a text node in one go.
 // Returns true if all the text fits, false if none fits.
-export async function appendTextNodeWithoutSplit(
+export async function appendTextAsBlock(
   textNode: Text,
   container: HTMLElement,
   doesFit: () => boolean,
@@ -21,10 +21,11 @@ export async function appendTextNodeWithoutSplit(
 
 // Incrementally add words to the container until it just barely doesn't
 // overflow. Returns a remainder textNode for remaining text.
-export async function appendTextUntilWhileFitting(
+export async function appendTextByWord(
   textNode: Text,
   container: HTMLElement,
   doesFit: () => boolean,
+  canSplit: () => boolean,
 ): Promise<AppendResult> {
   const originalText = textNode.nodeValue ?? '';
   container.appendChild(textNode);
@@ -38,8 +39,8 @@ export async function appendTextUntilWhileFitting(
   let proposedEnd = 0;
   textNode.nodeValue = originalText.substr(0, proposedEnd);
 
-  while (doesFit() && proposedEnd < originalText.length) {
-    // Reveal the next word
+  // While the text fits, add word-by-word
+  while (proposedEnd < originalText.length && doesFit()) {
     proposedEnd = indexOfNextWordEnd(originalText, proposedEnd);
 
     if (proposedEnd < originalText.length) {
@@ -48,25 +49,50 @@ export async function appendTextUntilWhileFitting(
     }
   }
 
-  // Back out to word boundary
-  const wordEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
-  const fittingText = originalText.substr(0, wordEnd);
+  // doesFit is no longer true, back out to last word boundary
+  proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
+  textNode.nodeValue = originalText.substr(0, proposedEnd);
 
-  if (wordEnd < 1 || isAllWhitespace(fittingText)) {
+  if (proposedEnd > 0 && !isAllWhitespace(originalText.substr(0, proposedEnd))) {
+    // If this split point is not permitted, ie because it would create an
+    // orphan or widow, we need to back out even further.
+    proposedEnd = await backupToFirstValidEndIndex(textNode, originalText, proposedEnd, canSplit);
+  }
+
+  const fittingTextAtValidSplit = originalText.substr(0, proposedEnd);
+
+  if (proposedEnd === 0 || isAllWhitespace(fittingTextAtValidSplit)) {
     // We didn't even add a complete word, don't add node
     textNode.nodeValue = originalText;
     container.removeChild(textNode);
     return { status: AppendStatus.ADDED_NONE };
   }
 
-  // Trimmed string is substantial: apply it to this node
-  textNode.nodeValue = fittingText;
+  // fittingText is substantial, update the node
+  textNode.nodeValue = fittingTextAtValidSplit;
 
-  // Create a new text node for the next region
-  const overflowingText = originalText.substr(wordEnd);
+  // Create a new text node for all the text that didn't fit
+  const overflowingText = originalText.substr(proposedEnd);
 
   return {
     status: AppendStatus.ADDED_PARTIAL,
     remainder: document.createTextNode(overflowingText),
   };
 };
+
+// Removes words until canSplit is fulfilled, does not consider doesFit. Returns the new endIndex.
+export async function backupToFirstValidEndIndex(
+  textNode: Text,
+  originalText: string,
+  initialProposedEnd: number,
+  canSplit: () => boolean,
+): Promise<number> {
+  let proposedEnd = initialProposedEnd;
+  while (proposedEnd > 0 && !canSplit() ) {
+    proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
+    textNode.nodeValue = originalText.substr(0, proposedEnd);
+    await yieldIfNeeded();
+  }
+
+  return proposedEnd;
+}

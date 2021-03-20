@@ -8,6 +8,7 @@ export enum TraverseEvent {
   canSplitInside = 'canSplitInside',
   canSplitBetween = 'canSplitBetween',
   canSkipTraverse = 'canSkipTraverse',
+  getMinHeight = 'getMinHeight',
   onAddStart = 'onAddStart',
   onAddFinish = 'onAddFinish',
   onAddCancel = 'onAddCancel',
@@ -17,6 +18,7 @@ export enum TraverseEvent {
 export interface TraverseHandler {
   [TraverseEvent.canSplitInside]: (el: HTMLElement) => boolean;
   [TraverseEvent.canSplitBetween]: (el: HTMLElement, next: HTMLElement) => boolean;
+  [TraverseEvent.getMinHeight]: (el: HTMLElement) => number | undefined;
   [TraverseEvent.canSkipTraverse]: (el: HTMLElement) => boolean;
   [TraverseEvent.onAddStart]: (el: HTMLElement) => Promise<void>;
   [TraverseEvent.onAddFinish]: (el: HTMLElement) => Promise<void>;
