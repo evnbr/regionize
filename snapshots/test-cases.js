@@ -21,6 +21,7 @@ const orphanParaContent2 = 'orphan-para-content-2';
 const orphanParaContentNest = 'orphan-para-content-nest';
 const orphanParaContentNest2 = 'orphan-para-content-nest-2';
 const orphanParaContentSlice = 'orphan-para-content-slice';
+const orphanParaContentSlice2 = 'orphan-para-content-slice-2';
 const widowParaContent = 'widow-para-content';
 
 const testCases = [
@@ -321,6 +322,44 @@ const testCases = [
     ],
   },
   {
+    id: 'orphan-para-slice',
+    name: 'Problem: Orphaned line with inline slicing',
+    desc: 'The split point may occur inside nested inline elements',
+    contentId: orphanParaContentSlice,
+    getPlugins: () => [
+      clearIndents('p'),
+    ],
+  },
+  {
+    id: 'orphan-para-slice-2',
+    name: 'Fixing orphaned line with inline slicing',
+    desc: 'The minHeight on the <p> tag is respected despite the sliced <b> <i> <u>',
+    contentId: orphanParaContentSlice,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'orphan-para-slice-3',
+    name: 'Problem: 2 Orphaned line with inline slicing',
+    desc: 'The split point may occur inside nested inline elements',
+    contentId: orphanParaContentSlice2,
+    getPlugins: () => [
+      clearIndents('p'),
+    ],
+  },
+  {
+    id: 'orphan-para-slice-4',
+    name: 'Fixing 2 orphaned line with inline slicing',
+    desc: 'The minHeight on the <p> tag is respected despite the sliced <b> <i> <u>',
+    contentId: orphanParaContentSlice2,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 60),
+    ],
+  },
+  {
     id: 'widow-paragraph',
     name: 'Problem: Widowed paragraph line',
     desc: 'By defauly, regionize does not handle widowed lines (the last line of a paragraph overflowing in a new region, where you may prefer to break early to overflow 2 lines).  This may be added in a future release.',
@@ -341,7 +380,7 @@ const testCases = [
   },
   {
     id: 'widow-paragraph-3',
-    name: 'Fixing widowed paragraph line',
+    name: 'Fixing widowed paragraph line 2',
     desc: 'Using a larger limit shifts more lines',
     contentId: widowParaContent,
     getPlugins: () => [

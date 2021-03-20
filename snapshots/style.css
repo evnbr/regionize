@@ -69,6 +69,7 @@ nav {
   position: fixed;
   background: var(--bg);
   box-shadow: 1px 0 0 rgba(0,0,0,0.12);
+  overflow-y: scroll;
 }
 
 .header {

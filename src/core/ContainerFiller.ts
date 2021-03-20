@@ -106,32 +106,36 @@ export class ContainerFiller {
   }
 
   private async backupToValidSiblingSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
-    const siblings = findValidSplit(
+    // First back up untl we canSplitBetween (ie keep together)
+    let siblings = findValidSplit(
       proposed,
       (el, next) => this.handler.canSplitBetween(el, next)
     );
 
-    if (this.currentMeasuredParent?.canSplitAtCurrentHeights()) {
-      throw Error('gotta back up further through siblings');
+    // Then backup further until measuredParentCanSplit (ie orphans/widows)
+    if (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
+      console.error(`TODO: Back up incrementally. Removing all ${siblings.added.length} for now`);
+      siblings = {
+        added: [],
+        remainders: [...siblings.added, ...siblings.remainders]
+      }
     }
 
-    for (let sib of siblings.remainders) {
-      if (isElement(sib)) {
-        // TODO: safely remove recursively
-        // TODO: potentially called twice because child may already hace been removed.
-        await this.handler.onAddCancel(sib);
-        sib.remove();
-      }
+    // Let plugins clean up
+    for (let node of siblings.remainders) {
+      await this.cancelAndRemove(node);
     }
 
     return siblings;
   }
 
-  private isElementToSmallToConsiderFitting(element: HTMLElement) {
-    if (element.childNodes.length === 0) {
-      return true;
-    };
-    return !this.measuredParentCanSplit();
+  private async cancelAndRemove(node: ChildNode) {
+    if (isElement(node)) {
+      // TODO: safely remove recursively
+      // TODO: potentially called twice because child may already hace been removed.
+      await this.handler.onAddCancel(node);
+    }
+    node.remove();
   }
 
   private startManagingHeightIfNeeded(element: HTMLElement) {
@@ -182,9 +186,8 @@ export class ContainerFiller {
 
           const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
 
-          if (this.isElementToSmallToConsiderFitting(element)) {
-            // Element seemed to fit when empty, but failed to add any portion of its first child
-            // while fulfilling plugin rules. Reject entirely and restart in the next region.
+          if (element.childNodes.length === 0) {
+            // element is empty, don't add at all
             return this.cancelAndCreateNoneResult(element, overflowingChildren);
           }
 
@@ -258,17 +261,13 @@ export class ContainerFiller {
   }
 
   private async cancelAndCreateNoneResult(element: HTMLElement, contentsToRestore?: Node[]): Promise<AppendResult> {
-    element.remove();
+    await this.cancelAndRemove(element);
 
     if (contentsToRestore) {
       element.append(...contentsToRestore);
     }
 
-    await this.handler.onAddCancel(element);
-
-    return {
-      status: AppendStatus.ADDED_NONE,
-    };
+    return { status: AppendStatus.ADDED_NONE };
   }
 
 }

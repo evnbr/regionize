@@ -1,0 +1,55 @@
+<div>
+  <h4 class="fg-blue">Container</h4>
+
+  <div class="sized-container box" data-region="true">
+    <div class="region-measured-content" style="position: relative;">
+      <div class="content box">
+        <h3>Orphan 2 line</h3>
+
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.
+        Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at
+        nibh elementum imperdiet. Duis sagittis ipsum. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <h4 class="fg-red">Remainder</h4>
+
+  <div class="remainder sized-container box" data-region="true">
+    <div class="region-measured-content" style="position: relative;">
+      <div class="content box" data-region-split="true">
+        <p>
+          <b>Second</b>
+
+          <i>paragraph</i>
+
+          <u>pellentesque</u>
+
+          <b>habitant</b>
+
+          <i>morbi</i>
+
+          <u>tristique</u>
+
+          <b>senectus</b>
+
+          <i>et</i>
+
+          <u>netus</u>
+
+          <b>et</b>
+
+          malesuada fames ac
+        turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor 
+        sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies
+        mi vitae est.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
