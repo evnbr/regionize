@@ -1,6 +1,7 @@
 // By default, element height isn't tracked. It's enough to know if the overflow
-// container itself has changed height. However, we do need 
-// to track heights to suppress orphans and widows. 
+// container itself has changed height. However, we do need to track heights to suppress
+// orphans and widows. If the user has provided a minheight for an element, an
+// instance of this class is created for the lifetime of addings its children. 
 
 export class HeightManagedElement {
   readonly element: HTMLElement;

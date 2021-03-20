@@ -2,7 +2,7 @@ import { TraverseHandler } from '../types';
 import { AppendStatus, AppendResult } from './AppendResult';
 import { OverflowContainer } from './OverflowContainer';
 import { isTextNode, isContentElement, isElement } from '../util/domUtils';
-import { appendTextAsBlock, appendTextByWord } from './appendTextNode';
+import { appendTextAsBlock, appendTextByWord } from './appendText';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
 import { HeightManagedElement } from './HeightManagedElement';
@@ -19,12 +19,22 @@ export class ContainerFiller {
     this.handler = handler;
   }
 
+  // ------------------------------
+  //
+  // Public API
+  //
+
   async addContent(content: HTMLElement, container: OverflowContainer): Promise<AppendResult> {
     this.currentContainer = container;
     return this.appendElement(content, undefined);
   }
 
-  private applySplitRules(original: HTMLElement, remainder: HTMLElement) {
+  // ------------------------------
+  //
+  // Convenience methods for interacting with traversehandler
+  //
+
+  private applySplitRules(original: HTMLElement, remainder: HTMLElement): void {
 
     const cloneWithRules = (el: HTMLElement): HTMLElement => {
       const clone = cloneWithChildren(el); // could be th > h3 > span;
@@ -59,89 +69,11 @@ export class ContainerFiller {
     return true;
   }
 
-  // TODO: Can we conect to progress estimator?
-  // private async ensureImageLoaded(img: HTMLImageElement) {
-  //   this.emitProgress('imageLoading');
-  //   const waitTime = await ensureImageLoaded(img);
-  //   this.estimator?.addWaitTime(waitTime);
-  //   this.emitProgress('inProgress');
-  // }
-
-  private measuredParentCanSplit(): boolean {
-    if (this.currentMeasuredParent === undefined) {
-      return true;
-    }
-
-    return this.currentMeasuredParent?.canSplitAtCurrentHeights();
-  }
-
-  private async appendText(textNode: Text, parent: HTMLElement) {
-    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
-
-    const doesFit = () => {
-      return !this.currentContainer.hasOverflowed();
-    }
-
-    if (!shouldSplitText) {
-      // No need to add by word
-      return await appendTextAsBlock(textNode, parent, doesFit);
-    }
-
-    const canSplit = () => {
-      return this.measuredParentCanSplit();
-    }
-    
-    // Add text word by word
-    return await appendTextByWord(textNode, parent, doesFit, canSplit);
-  }
-
-  private async appendNode(
-    child: Text | HTMLElement,
-    parent: HTMLElement,
-  ): Promise<AppendResult> {
-    if (isTextNode(child)) {
-      return this.appendText(child, parent);
-    }
-    return this.appendElement(child, parent);
-  }
-
-  private async backupToValidSiblingSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
-    // First back up untl we canSplitBetween (ie keep together)
-    let siblings = findValidSplit(
-      proposed,
-      (el, next) => this.handler.canSplitBetween(el, next)
-    );
-
-    // Then backup further until measuredParentCanSplit (ie orphans/widows)
-    if (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
-      console.error(`TODO: Back up incrementally. Removing all ${siblings.added.length} for now`);
-      siblings = {
-        added: [],
-        remainders: [...siblings.added, ...siblings.remainders]
-      }
-    }
-
-    // Let plugins clean up
-    for (let node of siblings.remainders) {
-      await this.cancelAndRemove(node);
-    }
-
-    return siblings;
-  }
-
-  private async cancelAndRemove(node: ChildNode) {
-    if (isElement(node)) {
-      // TODO: what order?
-      const descendants = [...node.querySelectorAll("*")] as HTMLElement[];
-      for (let child of descendants) {
-        await this.handler.onAddCancel(child);
-      }
-      await this.handler.onAddCancel(node);
-    }
-    node.remove();
-  }
-
-  private startManagingHeightIfNeeded(element: HTMLElement) {
+  // ------------------------------
+  //
+  // Measuring height
+  //
+  private startManagingHeightIfNeeded(element: HTMLElement): void {
     const minHeight = this.handler.getMinHeight(element); // TODO: clearer shouldManageHeight call
     if (minHeight !== undefined) {
       if (this.currentMeasuredParent !== undefined) {
@@ -152,69 +84,36 @@ export class ContainerFiller {
     }
   }
 
-  private endManagingHeightIfNeeded(element: HTMLElement) {
+  private endManagingHeightIfNeeded(element: HTMLElement): void  {
     if (this.currentMeasuredParent?.element === element) {
       this.currentMeasuredParent = undefined;
     }
   }
 
-  private async addChildrenThatFit(element: HTMLElement): Promise<AppendResult> {
-    // ignore scripts, comments, etc when iterating
-    const remainingChildren = [...element.childNodes]
-      .filter((c): c is (HTMLElement | Text) => {
-        return isContentElement(c) || isTextNode(c);
-      });
-    
-    (element as any).replaceChildren(); // Clear children
-
-    if (this.currentContainer.hasOverflowed() && !isInsideIgnoreOverflow(element)) { // TODO: Or, ancestor too short
-      // Doesn't fit when empty 
-      const result = await this.cancelAndCreateNoneResult(element, remainingChildren); 
-      return result;
-    }
-
-    while (remainingChildren.length > 0) {
-      // pop the first child off
-      const child = remainingChildren.shift()!;
-
-      let childResult = await this.appendNode(child, element);
-
-      switch (childResult.status) {
-        case AppendStatus.ADDED_NONE:
-          const proposedSiblings = {
-            added: [...element.childNodes],
-            remainders: [child]
-          };
-          const validSiblings = await this.backupToValidSiblingSplit(proposedSiblings);
-
-          const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
-
-          if (element.childNodes.length === 0) {
-            // element is empty, don't add at all
-            return this.cancelAndCreateNoneResult(element, overflowingChildren);
-          }
-
-          return this.createRemainderResult(element, overflowingChildren);
-
-        case AppendStatus.ADDED_PARTIAL:
-          return this.createRemainderResult(element, [childResult.remainder, ...remainingChildren]);
-
-        case AppendStatus.ADDED_ALL:
-          // Move on to the next sibling
-          continue;  
-      }
-    }
-
-    // Successfully added all children
-    return {
-      status: AppendStatus.ADDED_ALL,
-    };
+  private measuredParentCanSplit(): boolean {
+    return this.currentMeasuredParent?.canSplitAtCurrentHeights() ?? true;
   }
 
-  private async appendElement(
-    element: HTMLElement,
-    parentEl: HTMLElement | undefined
-  ): Promise<AppendResult> {
+  // ------------------------------
+  //
+  // Appending
+  //
+
+  private async appendText(textNode: Text, parent: HTMLElement): Promise<AppendResult> {
+    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
+
+    const doesFit = () => !this.currentContainer.hasOverflowed();
+    const canSplit = () =>  this.measuredParentCanSplit();
+
+    if (!shouldSplitText) { // No need to add by word
+      return await appendTextAsBlock(textNode, parent, doesFit);
+    }
+    
+    // Add text word by word
+    return await appendTextByWord(textNode, parent, doesFit, canSplit);
+  }
+
+  private async appendElement(element: HTMLElement, parentEl: HTMLElement | undefined): Promise<AppendResult> {
 
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
@@ -251,6 +150,89 @@ export class ContainerFiller {
     };
   }
 
+  private async addChildrenThatFit(element: HTMLElement): Promise<AppendResult> {
+    const remainingChildren = [...element.childNodes]
+      .filter((c): c is (HTMLElement | Text) => {
+        // Ignore scripts, comments, etc when iterating
+        return isContentElement(c) || isTextNode(c);
+      });
+    
+    (element as any).replaceChildren(); // Clear children. TODO why doesn't ts know about
+
+    if (this.currentContainer.hasOverflowed() && !isInsideIgnoreOverflow(element)) {
+      // Doesn't fit when empty
+      const result = await this.cancelAndCreateNoneResult(element, remainingChildren); 
+      return result;
+    }
+
+    while (remainingChildren.length > 0) {
+      // Add from the front of the list
+      const child = remainingChildren.shift()!;
+
+      const childResult = isTextNode(child)
+        ? await this.appendText(child, element)
+        : await this.appendElement(child, element);
+
+      switch (childResult.status) {
+        case AppendStatus.ADDED_NONE:
+          const proposedSiblings = {
+            added: [...element.childNodes],
+            remainders: [child]
+          };
+          const validSiblings = await this.backupToValidSiblingSplit(proposedSiblings);
+          const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
+
+          if (element.childNodes.length === 0) {
+            // element is empty, don't add at all
+            return this.cancelAndCreateNoneResult(element, overflowingChildren);
+          }
+
+          return this.createRemainderResult(element, overflowingChildren);
+
+        case AppendStatus.ADDED_PARTIAL:
+          return this.createRemainderResult(element, [childResult.remainder, ...remainingChildren]);
+
+        case AppendStatus.ADDED_ALL:
+          // Move on to the next sibling
+          continue;  
+      }
+    }
+
+    // Successfully added all children
+    return {
+      status: AppendStatus.ADDED_ALL,
+    };
+  }
+
+  private async backupToValidSiblingSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
+    // First back up untl canSplitBetween is true (ie keepTogether)
+    let siblings = findValidSplit(
+      proposed,
+      (el, next) => this.handler.canSplitBetween(el, next)
+    );
+
+    // Then backup further until measuredParentCanSplit is true (ie orphans/widows)
+    if (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
+      console.error(`TODO: Back up incrementally. Removing all ${siblings.added.length} for now`);
+      siblings = {
+        added: [],
+        remainders: [...siblings.added, ...siblings.remainders]
+      }
+    }
+
+    // Let plugins clean up
+    for (let node of siblings.remainders) {
+      await this.cancelAndRemove(node);
+    }
+
+    return siblings;
+  }
+
+  // ------------------------------
+  //
+  // Creating remainders and results
+  //
+
   private createRemainderResult(original: HTMLElement, overflowingNodes: Node[]): AppendResult {
     const remainder = cloneWithoutChildren(original);
     remainder.append(...overflowingNodes);
@@ -273,4 +255,16 @@ export class ContainerFiller {
     return { status: AppendStatus.ADDED_NONE };
   }
 
+
+  private async cancelAndRemove(node: ChildNode): Promise<void> {
+    if (isElement(node)) {
+      // TODO: what order?
+      const descendants = [...node.querySelectorAll("*")] as HTMLElement[];
+      for (let child of descendants) {
+        await this.handler.onAddCancel(child);
+      }
+      await this.handler.onAddCancel(node);
+    }
+    node.remove();
+  }
 }

@@ -55,7 +55,7 @@ export async function appendTextByWord(
 
   if (!isAllWhitespace(originalText.substr(0, proposedEnd))) {
     // keep backing up if needed to fulfill canSplit
-    proposedEnd = await indexOfPreviousClosestValidSplit(textNode, originalText, proposedEnd, canSplit);
+    proposedEnd = await indexOfPreviousClosestValidSplit(textNode, proposedEnd, canSplit);
   }
 
   const fittingTextAtValidSplit = originalText.substr(0, proposedEnd);
@@ -83,14 +83,15 @@ export async function appendTextByWord(
 // Returns new endIndex.
 export async function indexOfPreviousClosestValidSplit(
   textNode: Text,
-  originalText: string,
   initialProposedEnd: number,
   canSplit: () => boolean,
 ): Promise<number> {
   let proposedEnd = initialProposedEnd;
+  const originalText = textNode.nodeValue ?? '';
+
   while (proposedEnd > 0 && !canSplit() ) {
     proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
-    textNode.nodeValue = originalText.substr(0, proposedEnd); // need to actually update dom so we can measure
+    textNode.nodeValue = originalText.substr(0, proposedEnd); // really update dom because canSplit will measure
     await yieldIfNeeded();
   }
 

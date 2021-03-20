@@ -1,4 +1,4 @@
-import { TraverseHandler } from '../types';
+import { TraverseHandler, TraverseEvent } from '../types';
 import { isElement, isTextNode } from '../util/domUtils';
 import { isAllWhitespace } from '../util/stringUtils';
   
@@ -29,7 +29,7 @@ const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
 
 export const findValidSplit = (
   original: SiblingSplitPoint,
-  canSplitBetween: TraverseHandler['canSplitBetween']
+  canSplitBetween: TraverseHandler[TraverseEvent.canSplitBetween]
 ): SiblingSplitPoint => {
   let splitPoint = original;
 
