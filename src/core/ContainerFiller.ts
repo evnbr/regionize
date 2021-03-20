@@ -131,8 +131,11 @@ export class ContainerFiller {
 
   private async cancelAndRemove(node: ChildNode) {
     if (isElement(node)) {
-      // TODO: safely remove recursively
-      // TODO: potentially called twice because child may already hace been removed.
+      // TODO: what order?
+      const descendants = [...node.querySelectorAll("*")] as HTMLElement[];
+      for (let child of descendants) {
+        await this.handler.onAddCancel(child);
+      }
       await this.handler.onAddCancel(node);
     }
     node.remove();

@@ -16,6 +16,7 @@ const listContent = 'list-content';
 const nestedContent = 'nested-content';
 const traverseContent = 'traverse-content';
 const orphanHeadingContent = 'orphan-heading-content';
+const orphanHeadingContent2 = 'orphan-heading-content-sup';
 const orphanParaContent = 'orphan-para-content';
 const orphanParaContent2 = 'orphan-para-content-2';
 const orphanParaContentNest = 'orphan-para-content-nest';
@@ -113,11 +114,7 @@ const testCases = [
           });
         },
         onAddFinish: (el) => {
-          Object.assign(el.style, {
-            borderBottomWidth: '',
-            paddingBottom: '',
-            marginBottom: '',
-          });
+          el.style = '';
         },
       }),
     ],
@@ -192,7 +189,7 @@ const testCases = [
   },
   {
     id: 'keep-gotchas-1',
-    name: 'keepTogether Gotchas, Part 1',
+    name: 'keepTogether and onAddCancel, Part 1',
     desc: 'Use caution when performing side effects in onAddFinish. For example, you may be inclined to write a custom rule to style a parent element based on if it contains an h3. This normally works fine, but you probably don\'t want your h3 orphaned.',
     contentId: orphanHeadingContent,
     getPlugins: () => [
@@ -208,7 +205,7 @@ const testCases = [
   },
   {
     id: 'keep-gotchas-2',
-    name: 'keepTogether Gotchas, Part 2',
+    name: 'keepTogether and onAddCancel, Part 2',
     desc: 'However, when you add a keepTogether rule, your custom rule leads to an incorrect result. That is because Regionize may add and then remove an element to fulfill the keepTogether. But removing the h3 did not undo the side effect.',
     contentId: orphanHeadingContent,
     getPlugins: () => [
@@ -225,7 +222,7 @@ const testCases = [
   },
   {
     id: 'keep-gotchas-3',
-    name: 'keepTogether Gotchas, Part 3',
+    name: 'keepTogether and onAddCancel, Part 3',
     desc: 'To use side effects safely, your plugin should also include an onAddCancel method, giving you the chance to clean up after yourself.',
     contentId: orphanHeadingContent,
     getPlugins: () => [
@@ -238,8 +235,46 @@ const testCases = [
             .style.border = '4px solid green';
         },
         onAddCancel: (el) => {
+          el.style = '';
+          el.closest('.sized-container').style = '';
+        },
+      }),
+    ],
+  },
+  {
+    id: 'keep-gotchas-4',
+    name: 'keepTogether and onAddCancel, Part 4',
+    desc: 'onAddCancel on inner elements is called even if a parent element moves.',
+    contentId: orphanHeadingContent2,
+    getPlugins: () => [
+      keepTogether('h3', '*'),
+      makePlugin({
+        selector: '.note',
+        onAddFinish: (el) => {
+          el.style.color = 'blueviolet';
           el.closest('.sized-container')
-            .style.border = '';
+            .style.border = '4px solid blueviolet';
+        },
+      }),
+    ],
+  },
+  {
+    id: 'keep-gotchas-5',
+    name: 'keepTogether and onAddCancel, Part 5',
+    desc: 'onAddCancel on inner elements is called even if a parent element moves.',
+    contentId: orphanHeadingContent2,
+    getPlugins: () => [
+      keepTogether('h3', '*'),
+      makePlugin({
+        selector: '.note',
+        onAddFinish: (el) => {
+          el.style.color = 'blueviolet';
+          el.closest('.sized-container')
+            .style.border = '4px solid blueviolet';
+        },
+        onAddCancel: (el) => {
+          el.style = '';
+          el.closest('.sized-container').style = '';
         },
       }),
     ],
