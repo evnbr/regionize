@@ -19,6 +19,7 @@ const orphanHeadingContent = 'orphan-heading-content';
 const orphanParaContent = 'orphan-para-content';
 const orphanParaContent2 = 'orphan-para-content-2';
 const orphanParaContentNest = 'orphan-para-content-nest';
+const orphanParaContentNest2 = 'orphan-para-content-nest-2';
 const orphanParaContentSlice = 'orphan-para-content-slice';
 const widowParaContent = 'widow-para-content';
 
@@ -293,11 +294,30 @@ const testCases = [
   {
     id: 'orphan-para-nest-2',
     name: 'Fixing orphaned line with inline nesting',
-    desc: 'Using minHeight on <p> tags to fix',
+    desc: 'The minHeight on the <p> tag is respected despite the nested <b> <i> <u>',
     contentId: orphanParaContentNest,
     getPlugins: () => [
       clearIndents('p'),
       minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'orphan-para-nest-3',
+    name: 'Problem: 2 orphaned lines with inline nesting',
+    desc: '2 lines orphaned',
+    contentId: orphanParaContentNest2,
+    getPlugins: () => [
+      clearIndents('p'),
+    ],
+  },
+  {
+    id: 'orphan-para-nest-4',
+    name: 'Fixing 2 orphaned lines with inline nesting',
+    desc: 'The minHeight on the <p> tag is respected despite the nested <b> <i> <u>',
+    contentId: orphanParaContentNest2,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 60),
     ],
   },
   {

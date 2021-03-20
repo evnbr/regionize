@@ -53,10 +53,9 @@ export async function appendTextByWord(
   proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
   textNode.nodeValue = originalText.substr(0, proposedEnd);
 
-  if (proposedEnd > 0 && !isAllWhitespace(originalText.substr(0, proposedEnd))) {
-    // If this split point is not permitted, ie because it would create an
-    // orphan or widow, we need to back out even further.
-    proposedEnd = await backupToFirstValidEndIndex(textNode, originalText, proposedEnd, canSplit);
+  if (!isAllWhitespace(originalText.substr(0, proposedEnd))) {
+    // keep backing up if needed to fulfill canSplit
+    proposedEnd = await indexOfPreviousClosestValidSplit(textNode, originalText, proposedEnd, canSplit);
   }
 
   const fittingTextAtValidSplit = originalText.substr(0, proposedEnd);
@@ -80,8 +79,9 @@ export async function appendTextByWord(
   };
 };
 
-// Removes words until canSplit is fulfilled, does not consider doesFit. Returns the new endIndex.
-export async function backupToFirstValidEndIndex(
+// Removes words until canSplit is true, ignoring doesFit since we're going backwards.
+// Returns new endIndex.
+export async function indexOfPreviousClosestValidSplit(
   textNode: Text,
   originalText: string,
   initialProposedEnd: number,
@@ -90,7 +90,7 @@ export async function backupToFirstValidEndIndex(
   let proposedEnd = initialProposedEnd;
   while (proposedEnd > 0 && !canSplit() ) {
     proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
-    textNode.nodeValue = originalText.substr(0, proposedEnd);
+    textNode.nodeValue = originalText.substr(0, proposedEnd); // need to actually update dom so we can measure
     await yieldIfNeeded();
   }
 

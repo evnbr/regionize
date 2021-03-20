@@ -39,10 +39,23 @@ const h = (tagName, ...args) => {
   return el;
 };
 
-const setup = async ({ id, name, desc, contentId, getPlugins }) => {
+// const contentCache = {};
+// async function getContent(key) {
+//   if (!contentCache[key]) {
+//     const response = await fetch(`./content/${key}.html`);
+//     const htmlText = await response.text();
+//     const temp = document.createElement('template');
+//     temp.innerHTML = htmlText;
+//     const frag = temp.content;
+//     contentCache[key] = frag;
+//   }
+
+//   return contentCache[key].cloneNode(true);
+// }
+
+async function setup({ id, name, desc, contentId, getPlugins }) {
   const rowFragment = document.querySelector('#row-template').content.cloneNode(true);
 
-  
   const item = h(
     'section',
     { id, className: 'item' },
@@ -53,19 +66,17 @@ const setup = async ({ id, name, desc, contentId, getPlugins }) => {
 
   const plugins = getPlugins();
   const configHolder = item.querySelector('.config-slot');
-  configHolder.append(plugins.length > 0
-    ? prettyPrintPlugins(getPlugins)
-    : '[],'
-  );
+  configHolder.append(plugins.length > 0 ? prettyPrintPlugins(getPlugins) : '[],');
 
-  const contentFrag = document.querySelector(`#${contentId}`).content;
+  // const contentFrag = await getContent(contentId);
+  const contentFrag = document.querySelector(`#${contentId}`).content.cloneNode(true);
   const content = item.querySelector('.content');
-  content.append(contentFrag.cloneNode(true));
-
-  document.body.append(item);
-
   const container = item.querySelector('.sized-container');
   const remainderContainer = item.querySelector('.remainder');
+
+  content.append(contentFrag);
+  document.body.append(item);
+
 
   // console.log(`Starting ${id}`);
 
@@ -80,7 +91,6 @@ const setup = async ({ id, name, desc, contentId, getPlugins }) => {
     container: remainderContainer,
     plugins,
   });
-  console.log(result);
 
   // console.log(`Finished ${id}`);
 };

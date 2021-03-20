@@ -4,7 +4,7 @@
   <div class="sized-container box" data-region="true">
     <div class="region-measured-content" style="position: relative;">
       <div class="content box">
-        <h3>Orphan</h3>
+        <h3>Orphan 1 line</h3>
 
         <p>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.

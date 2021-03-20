@@ -5,26 +5,10 @@ import { isTextNode, isContentElement, isElement } from '../util/domUtils';
 import { appendTextAsBlock, appendTextByWord } from './appendTextNode';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
+import { HeightManagedElement } from './HeightManagedElement';
 
 const cloneWithoutChildren = <T extends Node>(el: T) => el.cloneNode(false) as T;
 const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
-
-// Used for orphan/widow detection and 
-class HeightManagedElement {
-  private element: HTMLElement;
-  readonly originalHeight: number;
-  readonly minHeight: number;
-
-  constructor(el: HTMLElement, minHeight: number) {
-    this.element = el;
-    this.minHeight = minHeight;
-    this.originalHeight = this.getCurrentHeight();
-  }
-
-  getCurrentHeight() {
-    return this.element.offsetHeight;
-  }
-}
 
 export class ContainerFiller {
   handler: TraverseHandler;
@@ -83,25 +67,12 @@ export class ContainerFiller {
   //   this.emitProgress('inProgress');
   // }
 
-  private canSplitAtMeasuredHeight(): boolean {
+  private measuredParentCanSplit(): boolean {
     if (this.currentMeasuredParent === undefined) {
       return true;
     }
 
-    const heightOfAddedPortion = this.currentMeasuredParent.getCurrentHeight();
-    const estHeightOfRemainderPortion = this.currentMeasuredParent.originalHeight - heightOfAddedPortion;
-
-    const min = this.currentMeasuredParent.minHeight;
-
-    if (min === undefined) {
-      return true;
-    }
-
-    if (heightOfAddedPortion < min || estHeightOfRemainderPortion < min) {
-      return false;
-    }
-
-    return true;
+    return this.currentMeasuredParent?.canSplitAtCurrentHeights();
   }
 
   private async appendText(textNode: Text, parent: HTMLElement) {
@@ -112,15 +83,15 @@ export class ContainerFiller {
     }
 
     if (!shouldSplitText) {
-      // Short circuit if we aren't adding by word
+      // No need to add by word
       return await appendTextAsBlock(textNode, parent, doesFit);
     }
 
     const canSplit = () => {
-      console.log(textNode.nodeValue);
-      return this.canSplitAtMeasuredHeight();
+      return this.measuredParentCanSplit();
     }
     
+    // Add text word by word
     return await appendTextByWord(textNode, parent, doesFit, canSplit);
   }
 
@@ -134,8 +105,15 @@ export class ContainerFiller {
     return this.appendElement(child, parent);
   }
 
-  private async findValidSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
-    const siblings = findValidSplit(proposed, this.handler.canSplitBetween.bind(this.handler));
+  private async backupToValidSiblingSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
+    const siblings = findValidSplit(
+      proposed,
+      (el, next) => this.handler.canSplitBetween(el, next)
+    );
+
+    if (this.currentMeasuredParent?.canSplitAtCurrentHeights()) {
+      throw Error('gotta back up further through siblings');
+    }
 
     for (let sib of siblings.remainders) {
       if (isElement(sib)) {
@@ -150,8 +128,10 @@ export class ContainerFiller {
   }
 
   private isElementToSmallToConsiderFitting(element: HTMLElement) {
-    // TODO: Or, ancestor too short.
-    return element.childNodes.length == 0;
+    if (element.childNodes.length === 0) {
+      return true;
+    };
+    return !this.measuredParentCanSplit();
   }
 
   private startManagingHeightIfNeeded(element: HTMLElement) {
@@ -165,8 +145,10 @@ export class ContainerFiller {
     }
   }
 
-  private endManagingHeight() {
-    this.currentMeasuredParent = undefined;
+  private endManagingHeightIfNeeded(element: HTMLElement) {
+    if (this.currentMeasuredParent?.element === element) {
+      this.currentMeasuredParent = undefined;
+    }
   }
 
   private async addChildrenThatFit(element: HTMLElement): Promise<AppendResult> {
@@ -192,17 +174,20 @@ export class ContainerFiller {
 
       switch (childResult.status) {
         case AppendStatus.ADDED_NONE:
-          const siblings = await this.findValidSplit({
+          const proposedSiblings = {
             added: [...element.childNodes],
             remainders: [child]
-          });
-          const overflowingChildren = [...siblings.remainders, ...remainingChildren];
+          };
+          const validSiblings = await this.backupToValidSiblingSplit(proposedSiblings);
+
+          const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
 
           if (this.isElementToSmallToConsiderFitting(element)) {
             // Element seemed to fit when empty, but failed to add any portion of its first child
             // while fulfilling plugin rules. Reject entirely and restart in the next region.
             return this.cancelAndCreateNoneResult(element, overflowingChildren);
           }
+
           return this.createRemainderResult(element, overflowingChildren);
 
         case AppendStatus.ADDED_PARTIAL:
@@ -245,7 +230,7 @@ export class ContainerFiller {
     if (hasOverflowed || this.shouldTraverseChildren(element)) {
       this.startManagingHeightIfNeeded(element);
       const childrenResult = await this.addChildrenThatFit(element);
-      this.endManagingHeight();
+      this.endManagingHeightIfNeeded(element);
 
       if (childrenResult.status !== AppendStatus.ADDED_ALL) {
         return childrenResult;
