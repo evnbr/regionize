@@ -15,9 +15,9 @@ export async function appendTextAsBlock(
   if (!success) container.removeChild(textNode);
   await yieldIfNeeded();
   return {
-    status: success ? AppendStatus.ADDED_ALL : AppendStatus.ADDED_NONE
+    status: success ? AppendStatus.ADDED_ALL : AppendStatus.ADDED_NONE,
   };
-};
+}
 
 // Incrementally add words to the container until it just barely doesn't
 // overflow. Returns a remainder textNode for remaining text.
@@ -77,7 +77,7 @@ export async function appendTextByWord(
     status: AppendStatus.ADDED_PARTIAL,
     remainder: document.createTextNode(overflowingText),
   };
-};
+}
 
 // Removes words until canSplit is true, ignoring doesFit since we're going backwards.
 // Returns new endIndex.
@@ -89,9 +89,10 @@ export async function indexOfPreviousClosestValidSplit(
   let proposedEnd = initialProposedEnd;
   const originalText = textNode.nodeValue ?? '';
 
-  while (proposedEnd > 0 && !canSplit() ) {
+  while (proposedEnd > 0 && !canSplit()) {
     proposedEnd = indexOfPreviousWordEnd(originalText, proposedEnd);
-    textNode.nodeValue = originalText.substr(0, proposedEnd); // really update dom because canSplit will measure
+    // Need to really update dom because canSplit will measure
+    textNode.nodeValue = originalText.substr(0, proposedEnd);
     await yieldIfNeeded();
   }
 

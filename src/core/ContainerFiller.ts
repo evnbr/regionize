@@ -12,7 +12,9 @@ const cloneWithChildren = <T extends Node>(el: T) => el.cloneNode(true) as T;
 
 export class ContainerFiller {
   handler: TraverseHandler;
+
   private currentContainer!: OverflowContainer;
+
   private currentMeasuredParent?: HeightManagedElement;
 
   constructor(handler: TraverseHandler) {
@@ -35,15 +37,14 @@ export class ContainerFiller {
   //
 
   private applySplitRules(original: HTMLElement, remainder: HTMLElement): void {
-
     const cloneWithRules = (el: HTMLElement): HTMLElement => {
       const clone = cloneWithChildren(el); // could be th > h3 > span;
       this.applySplitRules(el, clone);
-      return clone;  
+      return clone;
     };
 
     setIsSplit(remainder);
-    this.handler.onSplitFinish(original,remainder, cloneWithRules);
+    this.handler.onSplitFinish(original, remainder, cloneWithRules);
   }
 
   private canSplitInside(element: HTMLElement): boolean {
@@ -61,9 +62,9 @@ export class ContainerFiller {
 
   private shouldTraverseChildren(element: HTMLElement): boolean {
     if (this.handler.canSkipTraverse(element)) {
-      // The caller has asserted the region size cannot change as a result of traversing the elements,
-      // for example if an image needs to be loaded and measured, or if a footnote would be added
-      // that eats into the available space for content,
+      // The caller has asserted the region size cannot change as a result of traversing the
+      // elements, for example if an image needs to be loaded and measured, or if a footnote
+      // would be added that eats into the available space for content,
       return false;
     }
     return true;
@@ -84,7 +85,7 @@ export class ContainerFiller {
     }
   }
 
-  private endManagingHeightIfNeeded(element: HTMLElement): void  {
+  private endManagingHeightIfNeeded(element: HTMLElement): void {
     if (this.currentMeasuredParent?.element === element) {
       this.currentMeasuredParent = undefined;
     }
@@ -100,21 +101,22 @@ export class ContainerFiller {
   //
 
   private async appendText(textNode: Text, parent: HTMLElement): Promise<AppendResult> {
-    const shouldSplitText = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
+    const canAddTextByWord = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
 
     const doesFit = () => !this.currentContainer.hasOverflowed();
-    const canSplit = () =>  this.measuredParentCanSplit();
+    const canSplit = () => this.measuredParentCanSplit();
 
-    if (!shouldSplitText) { // No need to add by word
+    if (!canAddTextByWord) {
       return await appendTextAsBlock(textNode, parent, doesFit);
     }
-    
-    // Add text word by word
+
     return await appendTextByWord(textNode, parent, doesFit, canSplit);
   }
 
-  private async appendElement(element: HTMLElement, parentEl: HTMLElement | undefined): Promise<AppendResult> {
-
+  private async appendElement(
+    element: HTMLElement,
+    parentEl: HTMLElement | undefined,
+  ): Promise<AppendResult> {
     if (!isSplit(element)) {
       // Only apply at the beginning of element, not when inserting the remainder.
       // TODO: log progress if this is an image.
@@ -126,8 +128,7 @@ export class ContainerFiller {
 
     const hasOverflowed = this.currentContainer.hasOverflowed();
 
-    if (hasOverflowed && !this.canSplitInside(element)) { // TODO: OR is ancestor fitting amount too small.
-
+    if (hasOverflowed && !this.canSplitInside(element)) {
       // If we can't clear and traverse children, we already know it doesn't fit.
       return this.cancelAndCreateNoneResult(element);
     }
@@ -156,12 +157,12 @@ export class ContainerFiller {
         // Ignore scripts, comments, etc when iterating
         return isContentElement(c) || isTextNode(c);
       });
-    
+
     (element as any).replaceChildren(); // Clear children. TODO why doesn't ts know about
 
     if (this.currentContainer.hasOverflowed() && !isInsideIgnoreOverflow(element)) {
       // Doesn't fit when empty
-      const result = await this.cancelAndCreateNoneResult(element, remainingChildren); 
+      const result = await this.cancelAndCreateNoneResult(element, remainingChildren);
       return result;
     }
 
@@ -174,10 +175,10 @@ export class ContainerFiller {
         : await this.appendElement(child, element);
 
       switch (childResult.status) {
-        case AppendStatus.ADDED_NONE:
+        case AppendStatus.ADDED_NONE: {
           const proposedSiblings = {
             added: [...element.childNodes],
-            remainders: [child]
+            remainders: [child],
           };
           const validSiblings = await this.backupToValidSiblingSplit(proposedSiblings);
           const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
@@ -188,13 +189,16 @@ export class ContainerFiller {
           }
 
           return this.createRemainderResult(element, overflowingChildren);
-
-        case AppendStatus.ADDED_PARTIAL:
+        }
+        case AppendStatus.ADDED_PARTIAL: {
           return this.createRemainderResult(element, [childResult.remainder, ...remainingChildren]);
-
+        }
         case AppendStatus.ADDED_ALL:
-          // Move on to the next sibling
-          continue;  
+          // Do nothing, let loop continue
+          break;
+        default:
+          throw Error(`Unknown appendStatus ${childResult}`);
+        // No default
       }
     }
 
@@ -208,7 +212,7 @@ export class ContainerFiller {
     // First back up untl canSplitBetween is true (ie keepTogether)
     let siblings = findValidSplit(
       proposed,
-      (el, next) => this.handler.canSplitBetween(el, next)
+      (el, next) => this.handler.canSplitBetween(el, next),
     );
 
     // Then backup further until measuredParentCanSplit is true (ie orphans/widows)
@@ -216,12 +220,12 @@ export class ContainerFiller {
       console.error(`TODO: Back up incrementally. Removing all ${siblings.added.length} for now`);
       siblings = {
         added: [],
-        remainders: [...siblings.added, ...siblings.remainders]
-      }
+        remainders: [...siblings.added, ...siblings.remainders],
+      };
     }
 
     // Let plugins clean up
-    for (let node of siblings.remainders) {
+    for (const node of siblings.remainders) {
       await this.cancelAndRemove(node);
     }
 
@@ -241,11 +245,14 @@ export class ContainerFiller {
 
     return {
       status: AppendStatus.ADDED_PARTIAL,
-      remainder: remainder,
+      remainder,
     };
   }
 
-  private async cancelAndCreateNoneResult(element: HTMLElement, contentsToRestore?: Node[]): Promise<AppendResult> {
+  private async cancelAndCreateNoneResult(
+    element: HTMLElement,
+    contentsToRestore?: Node[],
+  ): Promise<AppendResult> {
     await this.cancelAndRemove(element);
 
     if (contentsToRestore) {
@@ -255,12 +262,11 @@ export class ContainerFiller {
     return { status: AppendStatus.ADDED_NONE };
   }
 
-
   private async cancelAndRemove(node: ChildNode): Promise<void> {
     if (isElement(node)) {
-      // TODO: what order?
-      const descendants = [...node.querySelectorAll("*")] as HTMLElement[];
-      for (let child of descendants) {
+      // TODO: Should probably define an order onAddCancel is called in
+      const descendants = [...node.querySelectorAll('*')] as HTMLElement[];
+      for (const child of descendants) {
         await this.handler.onAddCancel(child);
       }
       await this.handler.onAddCancel(node);

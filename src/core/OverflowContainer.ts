@@ -5,7 +5,7 @@ const createWrapper = () => {
   wrap.classList.add('region-measured-content');
   wrap.style.position = 'relative';
   return wrap;
-}
+};
 
 export interface OverflowContainer {
   readonly element: HTMLElement;
@@ -15,6 +15,7 @@ export interface OverflowContainer {
 
 export class OverflowContainerElement implements OverflowContainer {
   element: HTMLElement;
+
   private measurementWrapper: HTMLElement;
 
   constructor(el: HTMLElement) {

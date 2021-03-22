@@ -12,10 +12,15 @@ export class ProgressEstimator {
   private callback: (e: ProgressEvent) => void;
 
   private addedCount = 0;
+
   private timeWaiting = 0;
+
   private layoutTime = 0;
+
   private startTime = 0;
+
   private totalCount = 0;
+
   private totalTime = 0;
 
   constructor(callback: (e: ProgressEvent) => void) {

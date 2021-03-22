@@ -40,18 +40,19 @@ const h = (tagName, ...args) => {
 };
 
 // const contentCache = {};
-// async function getContent(key) {
-//   if (!contentCache[key]) {
-//     const response = await fetch(`./content/${key}.html`);
-//     const htmlText = await response.text();
-//     const temp = document.createElement('template');
-//     temp.innerHTML = htmlText;
-//     const frag = temp.content;
-//     contentCache[key] = frag;
-//   }
+async function getContent(key) {
+  return document.querySelector(`#${key}`).content.cloneNode(true);
+  // if (!contentCache[key]) {
+  //   const response = await fetch(`./content/${key}.html`);
+  //   const htmlText = await response.text();
+  //   const temp = document.createElement('template');
+  //   temp.innerHTML = htmlText;
+  //   const frag = temp.content;
+  //   contentCache[key] = frag;
+  // }
 
-//   return contentCache[key].cloneNode(true);
-// }
+  // return contentCache[key].cloneNode(true);
+}
 
 async function setup({ id, name, desc, contentId, getPlugins }) {
   const rowFragment = document.querySelector('#row-template').content.cloneNode(true);
@@ -68,8 +69,7 @@ async function setup({ id, name, desc, contentId, getPlugins }) {
   const configHolder = item.querySelector('.config-slot');
   configHolder.append(plugins.length > 0 ? prettyPrintPlugins(getPlugins) : '[],');
 
-  // const contentFrag = await getContent(contentId);
-  const contentFrag = document.querySelector(`#${contentId}`).content.cloneNode(true);
+  const contentFrag = await getContent(contentId);
   const content = item.querySelector('.content');
   const container = item.querySelector('.sized-container');
   const remainderContainer = item.querySelector('.remainder');
@@ -78,26 +78,19 @@ async function setup({ id, name, desc, contentId, getPlugins }) {
   document.body.append(item);
 
 
-  // console.log(`Starting ${id}`);
-
   const result = await addUntilOverflow({
     content: content.cloneNode(true),
     container,
     plugins,
   });
-  // remainderContainer.append(result.remainder ? result.remainder : '[No remainder]');
   await addUntilOverflow({
     content: result.remainder,
     container: remainderContainer,
     plugins,
   });
+}
 
-  // console.log(`Finished ${id}`);
-};
-
-const navItems = items.map(({ id, name }) => {
-  return h('a', { href: `#${id}`, className: 'nav-item' }, name);
-});
+const navItems = items.map(({ id, name }) => h('a', { href: `#${id}`, className: 'nav-item' }, name));
 
 const nav = document.querySelector('nav');
 nav.append(...navItems);

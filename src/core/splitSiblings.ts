@@ -1,7 +1,6 @@
 import { TraverseHandler, TraverseEvent } from '../types';
 import { isElement, isTextNode } from '../util/domUtils';
 import { isAllWhitespace } from '../util/stringUtils';
-  
 
 export interface SiblingSplitPoint {
   added: ChildNode[];
@@ -17,11 +16,11 @@ const getFirstContentNode = (nodes: ChildNode[]): ChildNode | undefined => {
     if (isElement(node)) return true;
     return false;
   });
-}
+};
 
 const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
-  return getFirstContentNode([...elements].reverse());;
-}
+  return getFirstContentNode([...elements].reverse());
+};
 
 // The proposed SiblingSplitPoint will be the maximum amount of added siblings
 // that fit before the region overflows, with the minimum remaunder. Therefore, if the
@@ -29,7 +28,7 @@ const getLastContentNode = (elements: ChildNode[]): ChildNode | undefined => {
 
 export const findValidSplit = (
   original: SiblingSplitPoint,
-  canSplitBetween: TraverseHandler[TraverseEvent.canSplitBetween]
+  canSplitBetween: TraverseHandler[TraverseEvent.canSplitBetween],
 ): SiblingSplitPoint => {
   let splitPoint = original;
 
@@ -38,22 +37,22 @@ export const findValidSplit = (
 
     const prevEl = getLastContentNode(added);
     const nextEl = getFirstContentNode(remainders);
-  
+
     if (!nextEl || !prevEl || !isElement(nextEl) || !isElement(prevEl)) {
       // If we are not between two HTMLElements, the split can be considered valid.
-      // Plugins to prevent split can only run on elements. 
+      // Plugins to prevent split can only run on elements.
       return splitPoint;
     }
-  
+
     if (canSplitBetween(prevEl, nextEl)) {
       return splitPoint;
     }
-    
+
     // try removing the last node and adding it to the remainder
     const shifted = added.pop()!;
     splitPoint = {
       added: [...added],
-      remainders: [shifted, ...remainders]
+      remainders: [shifted, ...remainders],
     };
   }
 
@@ -61,4 +60,4 @@ export const findValidSplit = (
   // sibling nodes while fulfilling the relevant plugins. This
   // result will cause the parent element to also be removed.
   return splitPoint;
-}
+};

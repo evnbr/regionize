@@ -1,9 +1,10 @@
 const MAX_WORK_MS = 30;
 
-const nextFrame = (): Promise<number> =>
-  new Promise(resolve => {
-    requestAnimationFrame(t => resolve(t));
+const nextFrame = (): Promise<number> => {
+  return new Promise((resolve) => {
+    requestAnimationFrame((t) => resolve(t));
   });
+};
 
 let lastYieldTime = 0;
 
@@ -16,10 +17,9 @@ export const yieldIfNeeded = async (): Promise<void> => {
   if (shouldYield()) lastYieldTime = await nextFrame();
 };
 
-
 export const runInSequence = async <T>(
   asyncFns: Array<(arg: T) => Promise<any>>,
   arg: T,
 ) => {
-  for (let f of asyncFns) await f(arg);
-}
+  for (const f of asyncFns) await f(arg);
+};

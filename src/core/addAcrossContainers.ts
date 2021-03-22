@@ -1,7 +1,7 @@
 import { PluginManager } from './PluginManager';
 import { MultiContainerFiller } from './MultiContainerFiller';
 import type { OverflowContainer } from './OverflowContainer';
-import type { ProgressEvent }  from './ProgressEstimator';
+import type { ProgressEvent } from './ProgressEstimator';
 import { Plugin } from '../types';
 import { missingInputError } from '../util/domUtils';
 
@@ -12,15 +12,14 @@ export interface AddAcrossOptions {
   plugins?: Plugin[];
 }
 
-// Public API for adding content and 
+// Public API for adding content and
 // containers until there is no remainder
-export async function addAcrossContainers ({
+export async function addAcrossContainers({
   content,
   getNextContainer,
   plugins,
-  onProgress
+  onProgress,
 }: AddAcrossOptions): Promise<void> {
-
   if (!content) throw missingInputError('content');
   if (!getNextContainer) throw missingInputError('getNextContainer');
 
@@ -28,4 +27,4 @@ export async function addAcrossContainers ({
   const filler = new MultiContainerFiller(handler, getNextContainer, onProgress);
 
   await filler.addContent(content);
-};
+}

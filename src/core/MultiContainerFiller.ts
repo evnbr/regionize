@@ -4,7 +4,7 @@ import { AppendStatus } from './AppendResult';
 import { isContentElement } from '../util/domUtils';
 import { ContainerFiller } from './ContainerFiller';
 import { ProgressEstimator, ProgressEvent } from './ProgressEstimator';
-  
+
 const noop = () => {};
 
 // Wraps a single ContainerFiller with methods to continue adding content until
@@ -13,9 +13,11 @@ const noop = () => {};
 // if you pass in progressCallback
 
 export class MultiContainerFiller {
-  private filler: ContainerFiller
+  private filler: ContainerFiller;
+
   private progressTracker: ProgressEstimator;
-  private getNextContainer: () => OverflowContainer; 
+
+  private getNextContainer: () => OverflowContainer;
 
   constructor(
     handler: TraverseHandler,
@@ -45,7 +47,7 @@ export class MultiContainerFiller {
     initialContainer: OverflowContainer,
   ): Promise<void> {
     const result = await this.filler.addContent(content, initialContainer);
-    if (result.status == AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
+    if (result.status === AppendStatus.ADDED_PARTIAL && isContentElement(result.remainder)) {
       const nextRegion = this.getNextContainer();
       await this.addElementAcrossContainers(result.remainder, nextRegion);
     }

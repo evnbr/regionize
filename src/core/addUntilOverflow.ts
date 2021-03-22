@@ -16,15 +16,15 @@ export interface AddUntilOptions {
 export async function addUntilOverflow({
   content,
   container,
-  plugins
+  plugins,
 }: AddUntilOptions): Promise<AppendResult> {
   if (!content) throw missingInputError('content');
   if (!container) throw missingInputError('container');
 
   const handler = new PluginManager(plugins ?? []);
   const filler = new ContainerFiller(handler);
-  return await filler.addContent(
+  return filler.addContent(
     content,
-    new OverflowContainerElement(container)
+    new OverflowContainerElement(container),
   );
-};
+}

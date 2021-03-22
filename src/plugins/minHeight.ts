@@ -1,6 +1,6 @@
 import type { Plugin } from '../types';
 
-export const minHeight = (selector: string, minHeight: number): Plugin => ({
+export const minHeight = (selector: string, height: number): Plugin => ({
   selector,
-  getMinHeight: (el) => minHeight,
+  getMinHeight: () => height,
 });

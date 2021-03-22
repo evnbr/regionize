@@ -6,28 +6,11 @@
 const toggleAttr = (el: Element, attr: string, newVal = true) => {
   if (newVal) {
     el.setAttribute(attr, 'true');
-  } else {
+  }
+  else {
     el.removeAttribute(attr);
   }
-}
-
-// Walk up the dom, checking parents against the callback, 
-// until one returns true or we hit a region boundary
-const isInsideElementMatching = (el: Element, cb: ((el: Element) => boolean)): boolean => {
-  if (isRegion(el)) {
-    return false;
-  }
-
-  if (cb(el)) {
-    return true;
-  }
-
-  if (el.parentElement) {
-    return isInsideElementMatching(el.parentElement, cb);
-  }
-
-  return false;
-}
+};
 
 // ------
 //
@@ -55,6 +38,24 @@ export const isRegion = (el: Element) => {
 
 export const setIsRegion = (el: Element, newVal = true) => {
   toggleAttr(el, IS_REGION_ATTR, newVal);
+};
+
+// Walk up the dom, checking parents against the callback,
+// until one returns true or we hit a region boundary
+const isInsideElementMatching = (el: Element, cb: ((el: Element) => boolean)): boolean => {
+  if (isRegion(el)) {
+    return false;
+  }
+
+  if (cb(el)) {
+    return true;
+  }
+
+  if (el.parentElement) {
+    return isInsideElementMatching(el.parentElement, cb);
+  }
+
+  return false;
 };
 
 // ------

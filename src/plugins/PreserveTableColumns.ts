@@ -1,6 +1,5 @@
 import type { Plugin } from '../types';
 
-
 export const preserveTableColumns = (selector = 'tr'): Plugin => ({
   selector,
   onSplitFinish: (
@@ -9,12 +8,12 @@ export const preserveTableColumns = (selector = 'tr'): Plugin => ({
     deepClone: (el: HTMLElement) => HTMLElement,
   ): void => {
     const originalRowCells = [...original.children] as HTMLElement[];
-    
+
     if (!remainder.firstElementChild) {
       // the remainder tr is empty, we must have addded all the cells in the row
       return;
     }
-  
+
     const currentCellIndex = originalRowCells.length;
 
     // starting from cell in the current column, back up through the
@@ -30,5 +29,5 @@ export const preserveTableColumns = (selector = 'tr'): Plugin => ({
 
     // TODO: also clone the remainder
     // cells into the original?
-  },  
+  },
 });

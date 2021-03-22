@@ -1,7 +1,7 @@
 import type { Plugin } from '../types';
 
 const sleep = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 const isImage = (node: Element): node is HTMLImageElement => {
@@ -21,7 +21,10 @@ const pollForImageSize = async (image: HTMLImageElement): Promise<number> => {
   image.addEventListener('error', () => {
     failed = true;
   });
-  image.src = image.src; // re-trigger error if already failed
+
+  // Restart image load, to guarantee event listender fires.
+  const originalSrc = image.src;
+  image.src = originalSrc;
 
   while (!image.naturalWidth && !failed) {
     await sleep(10);
@@ -30,12 +33,11 @@ const pollForImageSize = async (image: HTMLImageElement): Promise<number> => {
   return performance.now() - imgLoadStartTime;
 };
 
-
 export const ensureImageLoaded = (): Plugin => ({
   selector: 'img',
   onAddStart: async (el) => {
     if (isUnloadedImage(el)) {
       await pollForImageSize(el);
     }
-  }
+  },
 });
