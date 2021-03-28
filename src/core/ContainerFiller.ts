@@ -2,7 +2,7 @@ import { TraverseHandler } from '../types';
 import { AppendStatus, AppendResult } from './AppendResult';
 import { OverflowContainer } from './OverflowContainer';
 import { isTextNode, isContentElement, isElement } from '../util/domUtils';
-import { appendTextAsBlock, appendTextByWord, removeTextByWord } from './appendText';
+import { appendTextAsBlock, appendTextByWord, removeTextByWordUntil } from './appendText';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
 import { HeightManagedElement } from './HeightManagedElement';
@@ -103,14 +103,14 @@ export class ContainerFiller {
   private async appendText(textNode: Text, parent: HTMLElement): Promise<AppendResult> {
     const canAddTextByWord = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
 
-    const doesFit = () => !this.currentContainer.hasOverflowed();
+    const hasOverflowed = () => this.currentContainer.hasOverflowed();
     const canSplit = () => this.measuredParentCanSplit();
 
     if (!canAddTextByWord) {
-      return await appendTextAsBlock(textNode, parent, doesFit);
+      return await appendTextAsBlock(textNode, parent, hasOverflowed);
     }
 
-    return await appendTextByWord(textNode, parent, doesFit, canSplit);
+    return await appendTextByWord(textNode, parent, hasOverflowed, canSplit);
   }
 
   private async removeText(textNode: Text, parent: HTMLElement): Promise<AppendResult> {
@@ -123,7 +123,7 @@ export class ContainerFiller {
       return { status: AppendStatus.ADDED_NONE };
     }
     const originalStr = textNode.nodeValue!;
-    return removeTextByWord(textNode, originalStr, canSplit, originalStr.length);
+    return removeTextByWordUntil(textNode, originalStr, canSplit, originalStr.length);
   }
 
   private async appendElement(
