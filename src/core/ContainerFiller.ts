@@ -2,7 +2,7 @@ import { TraverseHandler } from '../types';
 import { AppendStatus, AppendResult } from './AppendResult';
 import { OverflowContainer } from './OverflowContainer';
 import { isTextNode, isContentElement, isElement } from '../util/domUtils';
-import { appendTextAsBlock, appendTextByWord } from './appendText';
+import { appendTextAsBlock, appendTextByWord, removeTextByWord } from './appendText';
 import { findValidSplit, SiblingSplitPoint } from './splitSiblings';
 import { isSplit, setIsSplit, isInsideIgnoreOverflow } from '../attributeHelper';
 import { HeightManagedElement } from './HeightManagedElement';
@@ -113,6 +113,19 @@ export class ContainerFiller {
     return await appendTextByWord(textNode, parent, doesFit, canSplit);
   }
 
+  private async removeText(textNode: Text, parent: HTMLElement): Promise<AppendResult> {
+    const canRemoveTextByWord = this.canSplitInside(parent) && !isInsideIgnoreOverflow(parent);
+
+    const canSplit = () => this.measuredParentCanSplit();
+
+    if (!canRemoveTextByWord) {
+      textNode.remove();
+      return { status: AppendStatus.ADDED_NONE };
+    }
+    const originalStr = textNode.nodeValue!;
+    return removeTextByWord(textNode, originalStr, canSplit, originalStr.length);
+  }
+
   private async appendElement(
     element: HTMLElement,
     parentEl: HTMLElement | undefined,
@@ -151,6 +164,71 @@ export class ContainerFiller {
     };
   }
 
+  private async removeElement(
+    element: HTMLElement,
+  ): Promise<AppendResult> {
+    if (!this.canSplitInside(element)) {
+      // If we can't traverse children, we already know it doesn't fit.
+      return this.cancelAndCreateNoneResult(element);
+    }
+
+    if (this.shouldTraverseChildren(element)) {
+      console.warn('wip: removing recursiely');
+      const result = await this.removeChildrenUntil(element, () => this.measuredParentCanSplit());
+      if (result.status !== AppendStatus.ADDED_NONE) {
+        return result;
+      }
+      // todo: properly restore if none?
+    }
+
+    return this.cancelAndCreateNoneResult(element);
+  }
+
+  private async removeChildrenUntil(
+    element: HTMLElement,
+    callback: () => Boolean,
+  ): Promise<AppendResult> {
+    const addedChildren = [...element.childNodes]
+      .filter((c): c is (HTMLElement | Text) => {
+        // Ignore scripts, comments, etc when iterating
+        return isContentElement(c) || isTextNode(c);
+      });
+    const removedChildren = [];
+
+    while (addedChildren.length > 0 && !callback()) {
+      // Remove from the end of the list
+      const child = addedChildren.pop()!;
+
+      const childResult = isTextNode(child)
+        ? await this.removeText(child, element)
+        : await this.removeElement(child);
+
+      // todo
+      switch (childResult.status) {
+        case AppendStatus.ADDED_NONE: {
+          removedChildren.unshift(child);
+
+          // Continue loop, keep removing
+          break;
+        }
+        case AppendStatus.ADDED_PARTIAL: {
+          // todo: this isnt quite right
+          return this.createRemainderResult(element, [childResult.remainder, ...removedChildren]);
+        }
+        case AppendStatus.ADDED_ALL:
+          return this.createRemainderResult(element, removedChildren);
+        default:
+          throw Error(`Unknown appendStatus ${(childResult as any).status}`);
+      }
+    }
+
+    // Removed all children.
+    return this.cancelAndCreateNoneResult(element, removedChildren);
+    // return {
+    //   status: AppendStatus.ADDED_NONE,
+    // };
+  }
+
   private async addChildrenThatFit(element: HTMLElement): Promise<AppendResult> {
     const remainingChildren = [...element.childNodes]
       .filter((c): c is (HTMLElement | Text) => {
@@ -180,7 +258,7 @@ export class ContainerFiller {
             added: [...element.childNodes],
             remainders: [child],
           };
-          const validSiblings = await this.backupToValidSiblingSplit(proposedSiblings);
+          const validSiblings = await this.backupToValidSiblingSplit(element, proposedSiblings);
           const overflowingChildren = [...validSiblings.remainders, ...remainingChildren];
 
           if (element.childNodes.length === 0) {
@@ -194,11 +272,10 @@ export class ContainerFiller {
           return this.createRemainderResult(element, [childResult.remainder, ...remainingChildren]);
         }
         case AppendStatus.ADDED_ALL:
-          // Do nothing, let loop continue
+          // Continue loop, keep adding
           break;
         default:
-          throw Error(`Unknown appendStatus ${childResult}`);
-        // No default
+          throw Error(`Unknown appendStatus ${(childResult as any).status}`);
       }
     }
 
@@ -208,25 +285,72 @@ export class ContainerFiller {
     };
   }
 
-  private async backupToValidSiblingSplit(proposed: SiblingSplitPoint): Promise<SiblingSplitPoint> {
+  private async backupToValidSiblingSplit(
+    element: HTMLElement,
+    proposed: SiblingSplitPoint,
+  ): Promise<SiblingSplitPoint> {
     // First back up untl canSplitBetween is true (ie keepTogether)
     let siblings = findValidSplit(
       proposed,
       (el, next) => this.handler.canSplitBetween(el, next),
     );
 
-    // Then backup further until measuredParentCanSplit is true (ie orphans/widows)
-    if (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
-      console.error(`TODO: Back up incrementally. Removing all ${siblings.added.length} for now`);
-      siblings = {
-        added: [],
-        remainders: [...siblings.added, ...siblings.remainders],
-      };
-    }
-
-    // Let plugins clean up
+    // Commit removal to dom & let plugins clean up
     for (const node of siblings.remainders) {
       await this.cancelAndRemove(node);
+    }
+
+
+    // Then backup further until measuredParentCanSplit is true (ie orphans/widows)
+    // const removeResult = await this.removeChildrenUntil(
+    //   element,
+    //   () => this.measuredParentCanSplit(),
+    // );
+
+    // TODO: should removeChildrenUntil returb a siblingsplitpoint instead,
+    // so this isnt so awkward?
+    // console.log(`backup result`, removeResult, `for proposal, `, siblings);
+    // switch (removeResult.status) {
+    //   case AppendStatus.ADDED_ALL:
+    //     return siblings;
+    //   case AppendStatus.ADDED_PARTIAL:
+    //     return {
+    //       added: [...element.childNodes],
+    //       remainders: [...removeResult.remainder.childNodes],
+    //     };
+    //   case AppendStatus.ADDED_NONE:
+    //     return {
+    //       added: [],
+    //       remainders: [...element.childNodes],
+    //     };
+    //   default:
+    //     throw Error(`Unknown appendStatus ${(removeResult as any).status}`);
+    // }
+
+    while (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
+      const { added, remainders } = siblings;
+
+      // TODO: share code with findValidSplit?
+      const shiftedNode = added.pop()! as (Text | HTMLElement);
+
+      const removalResult = isTextNode(shiftedNode)
+        ? await this.removeText(shiftedNode, element)
+        : await this.removeElement(shiftedNode);
+
+      if (removalResult.status === AppendStatus.ADDED_PARTIAL) {
+        const fittingPortion = shiftedNode;
+        const remainderPortion = removalResult.remainder;
+        return {
+          added: [...added, fittingPortion],
+          remainders: [remainderPortion, ...remainders],
+        };
+      }
+
+      await this.cancelAndRemove(shiftedNode);
+      siblings = {
+        added: [...added],
+        remainders: [shiftedNode, ...remainders],
+      };
     }
 
     return siblings;
@@ -237,9 +361,9 @@ export class ContainerFiller {
   // Creating remainders and results
   //
 
-  private createRemainderResult(original: HTMLElement, overflowingNodes: Node[]): AppendResult {
+  private createRemainderResult(original: HTMLElement, remainderChildren: Node[]): AppendResult {
     const remainder = cloneWithoutChildren(original);
-    remainder.append(...overflowingNodes);
+    remainder.append(...remainderChildren);
 
     this.applySplitRules(original, remainder);
 
@@ -271,6 +395,7 @@ export class ContainerFiller {
       }
       await this.handler.onAddCancel(node);
     }
+    // Only remove the root node
     node.remove();
   }
 }

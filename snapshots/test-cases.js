@@ -24,6 +24,7 @@ const orphanParaContentNest2 = 'orphan-para-content-nest-2';
 const orphanParaContentSlice = 'orphan-para-content-slice';
 const orphanParaContentSlice2 = 'orphan-para-content-slice-2';
 const widowParaContent = 'widow-para-content';
+const widowParaContentSlice = 'widow-para-content-slice';
 
 const testCases = [
   {
@@ -418,6 +419,35 @@ const testCases = [
     name: 'Fixing widowed paragraph line 2',
     desc: 'Using a larger limit shifts more lines',
     contentId: widowParaContent,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 60),
+    ],
+  },
+  {
+    id: 'widow-paragraph-4',
+    name: 'Widow slice',
+    desc: '...',
+    contentId: widowParaContentSlice,
+    getPlugins: () => [
+      clearIndents('p'),
+    ],
+  },
+  {
+    id: 'widow-paragraph-5',
+    name: 'Widow slice',
+    desc: '...',
+    contentId: widowParaContentSlice,
+    getPlugins: () => [
+      clearIndents('p'),
+      minHeight('p', 32),
+    ],
+  },
+  {
+    id: 'widow-paragraph-6',
+    name: 'Widow slice',
+    desc: '...',
+    contentId: widowParaContentSlice,
     getPlugins: () => [
       clearIndents('p'),
       minHeight('p', 60),

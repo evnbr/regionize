@@ -10,7 +10,7 @@ type WholeNodeAppendResult = {
 
 type PartialNodeAppendResult = {
   status: AppendStatus.ADDED_PARTIAL;
-  remainder: Node;
+  remainder: Text | HTMLElement;
 };
 
 export type AppendResult = WholeNodeAppendResult | PartialNodeAppendResult;
