@@ -287,73 +287,45 @@ export class ContainerFiller {
 
   private async backupToValidSiblingSplit(
     element: HTMLElement,
-    proposed: SiblingSplitPoint,
+    proposedSplit: SiblingSplitPoint,
   ): Promise<SiblingSplitPoint> {
     // First back up untl canSplitBetween is true (ie keepTogether)
-    let siblings = findValidSplit(
-      proposed,
+    let splitPoint = findValidSplit(
+      proposedSplit,
       (el, next) => this.handler.canSplitBetween(el, next),
     );
 
     // Commit removal to dom & let plugins clean up
-    for (const node of siblings.remainders) {
+    for (const node of splitPoint.remainders) {
       await this.cancelAndRemove(node);
     }
 
-
     // Then backup further until measuredParentCanSplit is true (ie orphans/widows)
-    // const removeResult = await this.removeChildrenUntil(
-    //   element,
-    //   () => this.measuredParentCanSplit(),
-    // );
+    while (splitPoint.added.length > 0 && !this.measuredParentCanSplit()) {
+      const { added, remainders } = splitPoint;
 
-    // TODO: should removeChildrenUntil returb a siblingsplitpoint instead,
-    // so this isnt so awkward?
-    // console.log(`backup result`, removeResult, `for proposal, `, siblings);
-    // switch (removeResult.status) {
-    //   case AppendStatus.ADDED_ALL:
-    //     return siblings;
-    //   case AppendStatus.ADDED_PARTIAL:
-    //     return {
-    //       added: [...element.childNodes],
-    //       remainders: [...removeResult.remainder.childNodes],
-    //     };
-    //   case AppendStatus.ADDED_NONE:
-    //     return {
-    //       added: [],
-    //       remainders: [...element.childNodes],
-    //     };
-    //   default:
-    //     throw Error(`Unknown appendStatus ${(removeResult as any).status}`);
-    // }
+      const removedNode = added.pop()! as (Text | HTMLElement);
 
-    while (siblings.added.length > 0 && !this.measuredParentCanSplit()) {
-      const { added, remainders } = siblings;
-
-      // TODO: share code with findValidSplit?
-      const shiftedNode = added.pop()! as (Text | HTMLElement);
-
-      const removalResult = isTextNode(shiftedNode)
-        ? await this.removeText(shiftedNode, element)
-        : await this.removeElement(shiftedNode);
+      const removalResult = isTextNode(removedNode)
+        ? await this.removeText(removedNode, element)
+        : await this.removeElement(removedNode);
 
       if (removalResult.status === AppendStatus.ADDED_PARTIAL) {
-        const fittingPortion = shiftedNode;
+        const fittingPortion = removedNode;
         const remainderPortion = removalResult.remainder;
         return {
           added: [...added, fittingPortion],
           remainders: [remainderPortion, ...remainders],
         };
       }
-
-      await this.cancelAndRemove(shiftedNode);
-      siblings = {
+      // Continue looping
+      splitPoint = {
         added: [...added],
-        remainders: [shiftedNode, ...remainders],
+        remainders: [removedNode, ...remainders],
       };
     }
 
-    return siblings;
+    return splitPoint;
   }
 
   // ------------------------------
